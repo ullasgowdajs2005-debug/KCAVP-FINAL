@@ -1,0 +1,422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KCAVP — Karnataka & National Crime Analytics & Visualization Platform. Standard, interactive, and attractive district-level IPC crime intelligence from 2016 to 2022.">
+    <title>KCAVP | Karnataka & National Crime Intelligence Platform</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar" id="navbar">
+        <div class="brand-section">
+            <div class="brand-badge-icon" aria-label="KCAVP Emblem">
+                ⚖
+            </div>
+            <div class="brand-text">
+                <div class="brand-title">
+                    KCAVP
+                    <span class="brand-pill">v2.4 Intelligence</span>
+                </div>
+                <div class="brand-subtitle">Crime Analytics & Visualization Platform</div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span>2016–2022 Verified Dataset</span>
+            </div>
+
+            <div class="state-select-wrapper">
+                <select id="globalStateSelect" class="state-select" aria-label="Select State or Union Territory">
+                    <option value="All India">🇮🇳 All India</option>
+                    {% for state in states_list %}
+                    <option value="{{ state }}" {% if state == default_state %}selected{% endif %}>{{ state }}</option>
+                    {% endfor %}
+                </select>
+                <span class="select-chevron">▼</span>
+            </div>
+
+            <button id="themeToggleBtn" class="btn-icon" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+                <span id="themeToggleIcon">☀️</span>
+            </button>
+
+            <button id="exportCsvBtn" class="btn-primary" title="Export current filtered records to CSV">
+                <span>⬇</span>
+                <span>Export CSV</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ================= MAIN DASHBOARD CONTAINER ================= -->
+    <main class="dashboard-container">
+
+        <!-- ================= HERO & MULTI-YEAR FILTER ================= -->
+        <section class="hero-banner">
+            <div class="hero-heading-group">
+                <h1>
+                    <span>Karnataka</span> Crime Intelligence
+                    <span id="globalLoadingIndicator" style="display:none; font-size: 14px; color: var(--accent-cyan); font-weight: 500;">(Syncing...)</span>
+                </h1>
+                <p id="heroBannerSub">
+                    {{ default_state }} • Year {{ default_year }} • District-level IPC Crime Incidence, Severity & Trajectories
+                </p>
+            </div>
+
+            <!-- Multi-Year Selector Pills -->
+            <div class="year-pills-group" role="tablist" aria-label="Select Year">
+                <button class="year-pill" data-year="2016">2016</button>
+                <button class="year-pill" data-year="2017">2017</button>
+                <button class="year-pill" data-year="2018">2018</button>
+                <button class="year-pill" data-year="2019">2019</button>
+                <button class="year-pill" data-year="2020">2020</button>
+                <button class="year-pill" data-year="2021">2021</button>
+                <button class="year-pill active" data-year="2022">2022</button>
+            </div>
+        </section>
+
+        <!-- ================= ASK KCAVP / SMART QUERY BAR ================= -->
+        <section class="ask-kcavp-card">
+            <div class="ask-header">
+                <div class="ask-title-wrapper">
+                    <div class="ask-icon-badge">✦</div>
+                    <h3>Ask KCAVP & Intelligent Crime Discovery</h3>
+                </div>
+            </div>
+
+            <div class="ask-input-bar">
+                <input
+                    type="text"
+                    id="askKcavpInput"
+                    class="ask-input"
+                    placeholder="Search any district or ask a query (e.g. 'Highest violent crime district', 'Safest district', 'Bengaluru Urban')..."
+                    aria-label="Ask KCAVP Query Input"
+                >
+                <button id="askKcavpBtn" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">
+                    Analyze →
+                </button>
+            </div>
+
+            <div class="ask-chips">
+                <span class="ask-chip-label">Quick Prompts:</span>
+                <button class="chip-btn" data-prompt="Highest violent crime district">🔥 Highest violent crimes</button>
+                <button class="chip-btn" data-prompt="Safest district in state">🛡️ Safest district</button>
+                <button class="chip-btn" data-prompt="Women and child safety trends">🌸 Women safety index</button>
+                <button class="chip-btn" data-prompt="Top theft hotspots">💼 Top theft hotspots</button>
+                <button class="chip-btn" data-prompt="Overall multi-year trajectory">📈 7-Year Trajectory</button>
+            </div>
+
+            <div id="askResultBox" class="ask-result-box" role="status"></div>
+        </section>
+
+        <!-- ================= EXECUTIVE KPI STATS GRID ================= -->
+        <section class="stats-grid" aria-label="Key Performance Indicators">
+            <!-- 1. Total IPC Crimes -->
+            <div class="kpi-card kpi-total">
+                <div class="kpi-top">
+                    <span class="kpi-label">Total IPC Crimes</span>
+                    <div class="kpi-icon icon-primary">📊</div>
+                </div>
+                <div class="kpi-value" id="kpiTotalCrimes">0</div>
+                <div class="kpi-footer">
+                    <span class="trend-pill trend-neutral" id="kpiTotalYoY">Calculating...</span>
+                    <span>vs previous year</span>
+                </div>
+            </div>
+
+            <!-- 2. Violent Crimes -->
+            <div class="kpi-card kpi-violent">
+                <div class="kpi-top">
+                    <span class="kpi-label">Violent Crime Volume</span>
+                    <div class="kpi-icon icon-rose">⚡</div>
+                </div>
+                <div class="kpi-value" id="kpiViolent">0</div>
+                <div class="kpi-footer">
+                    <span>Homicide, Grievous Hurt & Robbery</span>
+                </div>
+            </div>
+
+            <!-- 3. Crimes Against Women & Children -->
+            <div class="kpi-card kpi-women">
+                <div class="kpi-top">
+                    <span class="kpi-label">Women & Child Safety</span>
+                    <div class="kpi-icon icon-pink">🛡️</div>
+                </div>
+                <div class="kpi-value" id="kpiWomen">0</div>
+                <div class="kpi-footer">
+                    <span>Assault, Cruelty, Kidnapping & Abduction</span>
+                </div>
+            </div>
+
+            <!-- 4. Property & Economic Offences -->
+            <div class="kpi-card kpi-property">
+                <div class="kpi-top">
+                    <span class="kpi-label">Property & Financial</span>
+                    <div class="kpi-icon icon-blue">💼</div>
+                </div>
+                <div class="kpi-value" id="kpiProperty">0</div>
+                <div class="kpi-footer">
+                    <span>Thefts, Burglary, Fraud & Breach of Trust</span>
+                </div>
+            </div>
+
+            <!-- 5. Public Safety & Traffic -->
+            <div class="kpi-card kpi-safety">
+                <div class="kpi-top">
+                    <span class="kpi-label">Traffic & Public Safety</span>
+                    <div class="kpi-icon icon-amber">⚠️</div>
+                </div>
+                <div class="kpi-value" id="kpiSafety">0</div>
+                <div class="kpi-footer">
+                    <span>Rash Driving & Fatal Negligence</span>
+                </div>
+            </div>
+
+            <!-- 6. Top Hotspot District -->
+            <div class="kpi-card kpi-hotspot">
+                <div class="kpi-top">
+                    <span class="kpi-label">Highest Incidence Hub</span>
+                    <div class="kpi-icon icon-purple">📍</div>
+                </div>
+                <div class="kpi-value-sub" id="kpiHotspotDistrict">Loading...</div>
+                <div class="kpi-footer">
+                    <span id="kpiHotspotCount" style="font-weight:600; color: #818cf8;">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= CHARTS ROW 1: TRAJECTORY & CATEGORY DONUT ================= -->
+        <section class="charts-grid-row">
+            <!-- Multi-Year Longitudinal Trajectory Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Multi-Year Trajectory</span>
+                        <h2 class="chart-title">7-Year Crime Evolution (2016–2022)</h2>
+                        <span class="chart-desc">Longitudinal incident trends across major crime categories</span>
+                    </div>
+                </div>
+                <div class="chart-container-rel">
+                    <canvas id="trajectoryChartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Crime Category Breakdown Donut Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Composition Analysis</span>
+                        <h2 class="chart-title">Crime Category Share</h2>
+                        <span class="chart-desc">Proportional distribution of IPC crime categories</span>
+                    </div>
+                </div>
+                <div class="chart-container-rel" style="height: 230px;">
+                    <canvas id="donutChartCanvas"></canvas>
+                </div>
+                <div class="category-legend-list" id="categoryLegendContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= CHARTS ROW 2: DISTRICT RANKINGS & RADAR PROFILE ================= -->
+        <section class="charts-grid-row">
+            <!-- District Rankings Bar Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Comparative Rankings</span>
+                        <h2 class="chart-title">Top Incident Districts</h2>
+                        <span class="chart-desc">Click any bar to inspect in-depth district profile</span>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="filter-btn-group" role="group" aria-label="Ranking Metric">
+                            <button class="filter-btn ranking-filter-btn active" data-metric="total">Total</button>
+                            <button class="filter-btn ranking-filter-btn" data-metric="violent">Violent</button>
+                            <button class="filter-btn ranking-filter-btn" data-metric="property_economic">Property</button>
+                            <button class="filter-btn ranking-filter-btn" data-metric="women_children">Women Safety</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container-rel" style="height: 350px;">
+                    <canvas id="rankingChartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Crime Severity Radar Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Risk Dimension</span>
+                        <h2 class="chart-title">Crime Severity Profile</h2>
+                        <span class="chart-desc">Multi-axial proportion benchmark</span>
+                    </div>
+                </div>
+                <div class="chart-container-rel" style="height: 350px;">
+                    <canvas id="radarChartCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= DISTRICT HEATMAP & INTENSITY GRID ================= -->
+        <section class="district-heatmap-section">
+            <div class="heatmap-header">
+                <div class="chart-title-area">
+                    <span class="chart-eyebrow">Geographic Intensity Matrix</span>
+                    <h2 class="chart-title">District Incident Density Map</h2>
+                    <span class="chart-desc">Color-coded incidence density. Click any district cell for complete multi-year intelligence profile.</span>
+                </div>
+                <div class="heatmap-legend">
+                    <span>Incidence Tiers:</span>
+                    <div class="legend-scale">
+                        <div class="legend-box" style="background: var(--accent-emerald);"></div>
+                        <span>Low</span>
+                    </div>
+                    <div class="legend-scale">
+                        <div class="legend-box" style="background: var(--accent-cyan);"></div>
+                        <span>Moderate</span>
+                    </div>
+                    <div class="legend-scale">
+                        <div class="legend-box" style="background: var(--accent-amber);"></div>
+                        <span>Elevated</span>
+                    </div>
+                    <div class="legend-scale">
+                        <div class="legend-box" style="background: var(--accent-rose);"></div>
+                        <span>Severe</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="heatmap-grid" id="heatmapGridContainer">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- ================= DATA EXPLORER TABLE ================= -->
+        <section class="table-card">
+            <div class="table-toolbar">
+                <div class="chart-title-area">
+                    <span class="chart-eyebrow">Dataset Registry</span>
+                    <h2 class="chart-title">District Crime Data Explorer</h2>
+                    <span class="chart-desc">Interactive data table with multi-column sorting and instant search</span>
+                </div>
+                <input
+                    type="text"
+                    id="tableSearchInput"
+                    class="table-search-input"
+                    placeholder="Search district name..."
+                    aria-label="Search District in Table"
+                >
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th data-sort="district">District ⬍</th>
+                            <th data-sort="state">State</th>
+                            <th class="num-cell" data-sort="total">Total IPC ⬍</th>
+                            <th class="num-cell" data-sort="violent">Violent Crimes ⬍</th>
+                            <th class="num-cell" data-sort="women_children">Women Safety ⬍</th>
+                            <th class="num-cell" data-sort="property_economic">Property & Thefts ⬍</th>
+                            <th class="num-cell" data-sort="public_safety">Traffic Safety ⬍</th>
+                            <th class="num-cell" data-sort="murder">Murder ⬍</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-pagination">
+                <span id="tablePaginationInfo">Loading records...</span>
+                <div class="pagination-controls">
+                    <button id="tablePrevBtn" class="page-btn" disabled>← Previous</button>
+                    <button id="tableNextBtn" class="page-btn">Next →</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= DISTRICT DEEP DIVE MODAL ================= -->
+    <div id="districtDetailModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalDistrictTitle">
+        <div class="modal-container">
+            <button id="modalCloseBtn" class="modal-close-btn" aria-label="Close Modal">✕</button>
+
+            <div class="modal-header">
+                <span class="chart-eyebrow">District Deep-Dive Intelligence</span>
+                <h2 id="modalDistrictTitle" class="modal-district-name">District Name</h2>
+                <div id="modalStateSubtitle" class="modal-state-sub">State Subtitle</div>
+            </div>
+
+            <div class="modal-kpi-row">
+                <div class="modal-kpi-item">
+                    <label>Total Crimes (Latest Year)</label>
+                    <span id="modalTotalCrimes">0</span>
+                </div>
+                <div class="modal-kpi-item">
+                    <label>Violent Offenses</label>
+                    <span id="modalViolentCrimes" style="color: var(--cat-violent);">0</span>
+                </div>
+                <div class="modal-kpi-item">
+                    <label>State Average Benchmark</label>
+                    <span id="modalStateAverage" style="color: var(--primary);">0</span>
+                </div>
+            </div>
+
+            <div>
+                <span class="chart-eyebrow">Historical Incident Trajectory</span>
+                <div class="modal-chart-area">
+                    <canvas id="modalTimelineCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="dashboard-footer">
+        <div class="footer-brand">
+            <span>⚖ KCAVP</span>
+            <span>•</span>
+            <span>Karnataka & National Crime Analytics Platform</span>
+        </div>
+        <div>
+            Data Sources: Official District-Wise IPC Statistics 2016 & 2017–2022
+        </div>
+        <div>
+            © 2026 KCAVP. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Pass Django Pre-computed Payloads into Window for Immediate Rendering -->
+    <script>
+        window.KCAVP_DEFAULT_STATE = "{{ default_state }}";
+        window.KCAVP_DEFAULT_YEAR = "{{ default_year }}";
+        window.KCAVP_INITIAL_SUMMARY = {{ initial_summary_json|safe }};
+        window.KCAVP_INITIAL_TRENDS = {{ initial_trends_json|safe }};
+        window.KCAVP_INITIAL_RANKINGS = {{ initial_rankings_json|safe }};
+        window.KCAVP_INITIAL_CATEGORIES = {{ initial_categories_json|safe }};
+        window.KCAVP_INITIAL_TABLE = {{ initial_table_json|safe }};
+        window.KCAVP_STATES = {{ states_list_json|safe }};
+    </script>
+
+    <!-- Dashboard Controller -->
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>
