@@ -1,23 +1,34 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="KCAVP — Karnataka & National Crime Analytics & Visualization Platform. Standard, interactive, and attractive district-level IPC crime intelligence from 2016 to 2022.">
-    <title>KCAVP | Karnataka & National Crime Intelligence Platform</title>
+    <meta name="description"
+        content="KCAVP — Karnataka Single-District Crime Analytics & Visualization Platform. Comprehensive IPC crime statistics, specific offense head breakdowns, 7-year multi-year trends (2016–2022), continuous preferred district tracking, and category share for {{ default_district }}.">
+    <title>KCAVP | {{ default_district }} Crime Intelligence (2016–2022)</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖</text></svg>">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={{ timestamp }}">
 
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Chart.js Offline Bundle (with CDN fallback) -->
+    <script src="{% static 'js/chart.umd.min.js' %}"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');
+        }
+    </script>
 </head>
+
 <body>
 
     <!-- ================= NAVBAR ================= -->
@@ -29,23 +40,44 @@
             <div class="brand-text">
                 <div class="brand-title">
                     KCAVP
-                    <span class="brand-pill">v2.4 Intelligence</span>
+                    <span class="brand-pill">Single District View</span>
                 </div>
-                <div class="brand-subtitle">Crime Analytics & Visualization Platform</div>
+                <div class="brand-subtitle">Karnataka Crime Analytics & Visualization Platform</div>
             </div>
         </div>
 
         <div class="nav-controls">
             <div class="live-indicator">
                 <span class="live-dot"></span>
-                <span>2016–2022 Verified Dataset</span>
+                <span id="liveIndicatorText">2016–2022 Official Datasets</span>
             </div>
 
+            <!-- Pinned District Fast Shortcut (Scrolls to Pinned Surveillance Deck) -->
+            <button id="preferredDistrictQuickBtn" class="btn-preferred-shortcut" title="Jump down to Pinned District Surveillance Cockpit">
+                <span class="pulse-dot"></span>
+                <span>⭐</span>
+                <span id="preferredDistrictLabel">Pinned: Bengaluru City</span>
+            </button>
+
+            <!-- Single District Selector -->
             <div class="state-select-wrapper">
-                <select id="globalStateSelect" class="state-select" aria-label="Select State or Union Territory">
-                    <option value="All India">🇮🇳 All India</option>
-                    {% for state in states_list %}
-                    <option value="{{ state }}" {% if state == default_state %}selected{% endif %}>{{ state }}</option>
+                <select id="karnatakaDistrictSelect" class="state-select" aria-label="Select Karnataka District">
+                    {% for district in districts_list %}
+                    <option value="{{ district }}" {% if district == default_district %}selected{% endif %}>
+                        📍 {{ district }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <span class="select-chevron">▼</span>
+            </div>
+
+            <!-- Dataset Year Selector -->
+            <div class="state-select-wrapper">
+                <select id="yearSelect" class="state-select" aria-label="Select Dataset Year" style="min-width: 145px;">
+                    {% for y in available_years %}
+                    <option value="{{ y.id }}" {% if selected_year == y.id %}selected{% endif %}>
+                        📅 {{ y.label }}
+                    </option>
                     {% endfor %}
                 </select>
                 <span class="select-chevron">▼</span>
@@ -55,9 +87,14 @@
                 <span id="themeToggleIcon">☀️</span>
             </button>
 
-            <button id="exportCsvBtn" class="btn-primary" title="Export current filtered records to CSV">
+            <button id="resetAllBtn" class="btn-clear-all" title="Reset all filters, search queries, and return to default district" aria-label="Clear All Filters">
+                <span>↺</span>
+                <span>Clear All</span>
+            </button>
+
+            <button id="exportCsvBtn" class="btn-primary" title="Export this district's crime report to CSV">
                 <span>⬇</span>
-                <span>Export CSV</span>
+                <span id="exportBtnLabel">Export District CSV</span>
             </button>
         </div>
     </nav>
@@ -65,358 +102,620 @@
     <!-- ================= MAIN DASHBOARD CONTAINER ================= -->
     <main class="dashboard-container">
 
-        <!-- ================= HERO & MULTI-YEAR FILTER ================= -->
+        <!-- ================= HERO & DISTRICT TITLE ================= -->
         <section class="hero-banner">
             <div class="hero-heading-group">
-                <h1>
-                    <span>Karnataka</span> Crime Intelligence
-                    <span id="globalLoadingIndicator" style="display:none; font-size: 14px; color: var(--accent-cyan); font-weight: 500;">(Syncing...)</span>
+                <h1 style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span id="heroDistrictName">{{ default_district }}</span> Crime Intelligence
+                    <button id="trackDistrictBtn" class="btn-track-district" title="Pin this explorer district to your continuous surveillance watch deck">
+                        <span id="trackStarIcon">⭐</span>
+                        <span id="trackBtnText">Pin to Watch Deck</span>
+                    </button>
+                    <span id="heroYearBadge" class="brand-pill" style="font-size: 12px;">{{ summary.year_display }}</span>
+                    <span id="globalLoadingIndicator"
+                        style="display:none; font-size: 14px; color: var(--accent-cyan); font-weight: 500;">(Syncing...)</span>
                 </h1>
                 <p id="heroBannerSub">
-                    {{ default_state }} • Year {{ default_year }} • District-level IPC Crime Incidence, Severity & Trajectories
+                    {{ default_district }} ({{ summary.parent_district }}) • Official IPC Crime Heads & Multi-Year Analytics ({{ summary.year_display }})
                 </p>
             </div>
 
-            <!-- Multi-Year Selector Pills -->
-            <div class="year-pills-group" role="tablist" aria-label="Select Year">
-                <button class="year-pill" data-year="2016">2016</button>
-                <button class="year-pill" data-year="2017">2017</button>
-                <button class="year-pill" data-year="2018">2018</button>
-                <button class="year-pill" data-year="2019">2019</button>
-                <button class="year-pill" data-year="2020">2020</button>
-                <button class="year-pill" data-year="2021">2021</button>
-                <button class="year-pill active" data-year="2022">2022</button>
+            <!-- Quick Year Filter Tabs (2016-2022) -->
+            <div class="year-pills-group" id="yearPillsGroup" role="tablist" aria-label="Filter Dataset Year">
+                <button class="year-pill {% if selected_year == 'all' %}active{% endif %}" data-year="all">All (2016–22)</button>
+                <button class="year-pill {% if selected_year == '2022' %}active{% endif %}" data-year="2022">2022</button>
+                <button class="year-pill {% if selected_year == '2021' %}active{% endif %}" data-year="2021">2021</button>
+                <button class="year-pill {% if selected_year == '2020' %}active{% endif %}" data-year="2020">2020</button>
+                <button class="year-pill {% if selected_year == '2019' %}active{% endif %}" data-year="2019">2019</button>
+                <button class="year-pill {% if selected_year == '2018' %}active{% endif %}" data-year="2018">2018</button>
+                <button class="year-pill {% if selected_year == '2017' %}active{% endif %}" data-year="2017">2017</button>
+                <button class="year-pill {% if selected_year == '2016' %}active{% endif %}" data-year="2016">2016</button>
             </div>
         </section>
 
-        <!-- ================= ASK KCAVP / SMART QUERY BAR ================= -->
+        <!-- ================= CATEGORY FILTER PILLS ================= -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: -10px; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Categories:</span>
+            <div class="year-pills-group" id="categoryPillsGroup" role="tablist" aria-label="Filter Offenses by Category">
+                <button class="year-pill active" data-category="all">All Offenses</button>
+                <button class="year-pill" data-category="property_economic">Property & Theft</button>
+                <button class="year-pill" data-category="public_safety">Traffic & Safety</button>
+                <button class="year-pill" data-category="women_children">Women & Child Safety</button>
+                <button class="year-pill" data-category="violent">Violent Crimes</button>
+                <button class="year-pill" data-category="public_order">Public Order</button>
+            </div>
+        </div>
+
+        <!-- ================= QUICK DISTRICT SHORTCUTS ================= -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Quick Switch:</span>
+            {% for d in districts_list %}
+            {% if d in "Bengaluru City,Mysuru City,Mangaluru City,Hubballi Dharwad City,Belagavi City,Mandya,Shimoga,Tumakuru,Hassan,Kalaburgi,Kalaburgi City,Udupi,Vijayanagara" %}
+            <button class="chip-btn quick-district-chip {% if d == default_district %}active{% endif %}" data-district="{{ d }}">{{ d }}</button>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- ================= PINNED DISTRICT SURVEILLANCE COCKPIT (ISOLATED DEDICATED VISUALIZATIONS) ================= -->
+        <section class="pinned-deck-card" id="pinnedDistrictDeck">
+            <!-- Header with Independent Controls -->
+            <div class="pinned-deck-header">
+                <div class="pinned-deck-title-group">
+                    <div class="pinned-icon-badge">⭐</div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #f8fafc;">
+                                Continuous Surveillance Deck: <span id="pinnedDeckTitleDistrict" style="color: #fbbf24;">Bengaluru City</span>
+                            </h3>
+                            <span class="pinned-badge-pill">ISOLATED SURVEILLANCE</span>
+                        </div>
+                        <p class="pinned-deck-subtitle">
+                            Autonomous continuous monitoring module • Distinct threat gauge & volatility momentum metrics (Zero impact on main explorer)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="pinned-deck-actions">
+                    <span class="trend-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px;">
+                        <span class="pulse-dot" style="margin-right: 4px;"></span> Active Surveillance
+                    </span>
+
+                    <!-- Dropdown to independently switch pinned district without touching main explorer -->
+                    <div class="state-select-wrapper" style="min-width: 175px;">
+                        <select id="pinnedDistrictSelect" class="state-select" aria-label="Select Pinned District to Watch" style="padding: 6px 28px 6px 10px; font-size: 12px; background: rgba(15, 23, 42, 0.85); border-color: rgba(245, 158, 11, 0.4);">
+                            {% for d in districts_list %}
+                            <option value="{{ d }}">⭐ Pin {{ d }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="select-chevron" style="right: 8px; font-size: 9px;">▼</span>
+                    </div>
+
+                    <button id="pinCurrentDistrictBtn" class="btn-track-district" title="Pin the district currently active in the main explorer to this surveillance deck">
+                        <span>📍 Pin Active Explorer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4 Dedicated Telemetry KPIs for Pinned District -->
+            <div class="pinned-kpis-grid">
+                <div class="pinned-kpi-cell">
+                    <span class="pk-label">7-Year Cumulative Crimes</span>
+                    <span class="pk-value" id="pinnedMetricTotal">--</span>
+                    <span class="pk-sub" id="pinnedMetricTotalSub">2016–2022 Official IPC Total</span>
+                </div>
+                <div class="pinned-kpi-cell">
+                    <span class="pk-label">Net 7-Year Velocity Shift</span>
+                    <span class="pk-value" id="pinnedMetricTrend">--</span>
+                    <span class="pk-sub" id="pinnedMetricTrendSub">Historical Growth / Drop Rate</span>
+                </div>
+                <div class="pinned-kpi-cell">
+                    <span class="pk-label">Primary Threat Focus</span>
+                    <span class="pk-value" id="pinnedMetricTopThreat" style="font-size: 15px;">--</span>
+                    <span class="pk-sub" id="pinnedMetricThreatCount">Highest recorded IPC head</span>
+                </div>
+                <div class="pinned-kpi-cell">
+                    <span class="pk-label">Vigilance Advisory Status</span>
+                    <span class="pk-value" id="pinnedMetricAdvisory" style="font-size: 15px;">Guarded Vigilance</span>
+                    <span class="pk-sub" id="pinnedMetricAdvisorySub">Threat Score Calculation</span>
+                </div>
+            </div>
+
+            <!-- Distinct Visualizations Row: Gauge Speedometer + Diverging Momentum Bar -->
+            <div class="pinned-visuals-grid">
+                <!-- Visual 1: Safety Threat & Risk Index Gauge (Semi-doughnut Speedometer) -->
+                <div class="pinned-viz-card">
+                    <div class="pinned-viz-header">
+                        <div>
+                            <span class="pinned-eyebrow">Threat Severity Engine</span>
+                            <h4 class="pinned-viz-title">Safety Threat & Vulnerability Gauge</h4>
+                        </div>
+                        <span id="pinnedGaugeTierBadge" class="trend-pill" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 11px;">
+                            Guarded Vigilance
+                        </span>
+                    </div>
+                    <div class="gauge-chart-container">
+                        <canvas id="pinnedThreatGaugeCanvas"></canvas>
+                        <!-- Center Digital Score Readout -->
+                        <div class="gauge-score-display">
+                            <span class="gauge-number" id="pinnedGaugeScore">--</span>
+                            <span class="gauge-scale">/ 100 Risk Score</span>
+                            <span class="gauge-status-tag" id="pinnedGaugeStatusTag">Calculating...</span>
+                        </div>
+                    </div>
+                    <div class="gauge-scale-legend">
+                        <div class="g-leg-item"><span class="g-dot" style="background: #10b981;"></span> 0–35: Low Risk</div>
+                        <div class="g-leg-item"><span class="g-dot" style="background: #f59e0b;"></span> 35–65: Guarded</div>
+                        <div class="g-leg-item"><span class="g-dot" style="background: #f43f5e;"></span> 65–100: Critical Alert</div>
+                    </div>
+                </div>
+
+                <!-- Visual 2: Diverging Annual Momentum & Volatility Bar Chart -->
+                <div class="pinned-viz-card">
+                    <div class="pinned-viz-header">
+                        <div>
+                            <span class="pinned-eyebrow">Volatility Dynamics</span>
+                            <h4 class="pinned-viz-title">Year-over-Year Momentum & Volatility (YoY % Shift)</h4>
+                        </div>
+                        <div class="pinned-yoy-indicators">
+                            <span style="font-size: 11px; color: #10b981; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                                <span style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:2px;"></span> Crime Reduction (-)
+                            </span>
+                            <span style="font-size: 11px; color: #f43f5e; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                                <span style="display:inline-block; width:8px; height:8px; background:#f43f5e; border-radius:2px;"></span> Crime Surge (+)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="pinned-momentum-container">
+                        <canvas id="pinnedMomentumCanvas"></canvas>
+                    </div>
+                    <div class="pinned-momentum-footer" id="pinnedMomentumSummaryText">
+                        Analyzing multi-year YoY trajectory deltas...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual 3: Surveillance Crime Family Severity Heatstrip -->
+            <div class="pinned-heatstrip-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+                        Surveillance Crime Category Intensity Distribution
+                    </span>
+                    <span id="pinnedHeatstripFocusNote" style="font-size: 11px; color: #94a3b8;">
+                        Proportional burden across major crime heads
+                    </span>
+                </div>
+                <div class="pinned-heatstrip-bar" id="pinnedHeatstripBar">
+                    <!-- Dynamic segments filled by JS -->
+                </div>
+                <div class="pinned-heatstrip-legend" id="pinnedHeatstripLegend">
+                    <!-- Dynamic legend chips filled by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ASK KCAVP / SINGLE-DISTRICT QUERY ================= -->
         <section class="ask-kcavp-card">
             <div class="ask-header">
                 <div class="ask-title-wrapper">
                     <div class="ask-icon-badge">✦</div>
-                    <h3>Ask KCAVP & Intelligent Crime Discovery</h3>
+                    <h3>Ask KCAVP & District Crime Discovery</h3>
                 </div>
             </div>
 
             <div class="ask-input-bar">
-                <input
-                    type="text"
-                    id="askKcavpInput"
-                    class="ask-input"
-                    placeholder="Search any district or ask a query (e.g. 'Highest violent crime district', 'Safest district', 'Bengaluru Urban')..."
-                    aria-label="Ask KCAVP Query Input"
-                >
+                <input type="text" id="askKcavpInput" class="ask-input"
+                    placeholder="Search any crime in {{ default_district }} or ask about your pinned district (e.g. 'How is my pinned district doing?', '2022 thefts', 'Murders in 2021')..."
+                    aria-label="Ask KCAVP Query Input">
                 <button id="askKcavpBtn" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">
                     Analyze →
                 </button>
             </div>
 
             <div class="ask-chips">
-                <span class="ask-chip-label">Quick Prompts:</span>
-                <button class="chip-btn" data-prompt="Highest violent crime district">🔥 Highest violent crimes</button>
-                <button class="chip-btn" data-prompt="Safest district in state">🛡️ Safest district</button>
-                <button class="chip-btn" data-prompt="Women and child safety trends">🌸 Women safety index</button>
-                <button class="chip-btn" data-prompt="Top theft hotspots">💼 Top theft hotspots</button>
-                <button class="chip-btn" data-prompt="Overall multi-year trajectory">📈 7-Year Trajectory</button>
+                <span class="ask-chip-label">Quick Checks:</span>
+                <button class="chip-btn" id="chipPreferredStatus" data-prompt="How is my pinned district doing?">⭐ Pinned District Status</button>
+                <button class="chip-btn" data-prompt="What is the highest crime in this district?">📌 Top Offense</button>
+                <button class="chip-btn" data-prompt="How have crimes trended from 2016 to 2022?">📈 7-Year Trend</button>
+                <button class="chip-btn" data-prompt="How many violent crimes?">⚡ Violent Crimes</button>
+                <button class="chip-btn" data-prompt="Women and child safety cases">🛡️ Women Safety</button>
+                <button class="chip-btn" data-prompt="Theft and burglary cases">💼 Property & Thefts</button>
             </div>
 
             <div id="askResultBox" class="ask-result-box" role="status"></div>
         </section>
 
-        <!-- ================= EXECUTIVE KPI STATS GRID ================= -->
-        <section class="stats-grid" aria-label="Key Performance Indicators">
-            <!-- 1. Total IPC Crimes -->
-            <div class="kpi-card kpi-total">
+        <!-- ================= SINGLE-DISTRICT EXECUTIVE KPI STATS GRID ================= -->
+        <section class="stats-grid" aria-label="District Key Performance Indicators">
+            <!-- 1. Total IPC Crimes in District -->
+            <div class="kpi-card kpi-total" data-kpi="total" title="Click to view full district crime composition & 7-year trajectory visualization">
                 <div class="kpi-top">
-                    <span class="kpi-label">Total IPC Crimes</span>
+                    <span class="kpi-label">Total District IPC Crimes</span>
                     <div class="kpi-icon icon-primary">📊</div>
                 </div>
-                <div class="kpi-value" id="kpiTotalCrimes">0</div>
+                <div class="kpi-value" id="kpiTotalCrimes">{{ summary.total_crimes }}</div>
                 <div class="kpi-footer">
-                    <span class="trend-pill trend-neutral" id="kpiTotalYoY">Calculating...</span>
-                    <span>vs previous year</span>
+                    <span class="trend-pill trend-neutral" id="kpiDistrictBadge">{{ default_district }}</span>
+                    <span class="trend-pill" id="kpiYoYBadge" style="{% if summary.yoy_growth < 0 %}background: rgba(16, 185, 129, 0.15); color: #10b981;{% elif summary.yoy_growth > 0 %}background: rgba(244, 63, 94, 0.15); color: #f43f5e;{% else %}display:none;{% endif %}">
+                        {% if summary.yoy_growth > 0 %}▲ +{{ summary.yoy_growth }}%{% elif summary.yoy_growth < 0 %}▼ {{ summary.yoy_growth }}%{% endif %}
+                        vs {{ summary.prev_year }}
+                    </span>
+                    <span id="kpiYearLabel" style="font-size: 11px; color: var(--text-muted); margin-left: auto;">{{ summary.year_display }}</span>
                 </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
             </div>
 
-            <!-- 2. Violent Crimes -->
-            <div class="kpi-card kpi-violent">
-                <div class="kpi-top">
-                    <span class="kpi-label">Violent Crime Volume</span>
-                    <div class="kpi-icon icon-rose">⚡</div>
-                </div>
-                <div class="kpi-value" id="kpiViolent">0</div>
-                <div class="kpi-footer">
-                    <span>Homicide, Grievous Hurt & Robbery</span>
-                </div>
-            </div>
-
-            <!-- 3. Crimes Against Women & Children -->
-            <div class="kpi-card kpi-women">
-                <div class="kpi-top">
-                    <span class="kpi-label">Women & Child Safety</span>
-                    <div class="kpi-icon icon-pink">🛡️</div>
-                </div>
-                <div class="kpi-value" id="kpiWomen">0</div>
-                <div class="kpi-footer">
-                    <span>Assault, Cruelty, Kidnapping & Abduction</span>
-                </div>
-            </div>
-
-            <!-- 4. Property & Economic Offences -->
-            <div class="kpi-card kpi-property">
+            <!-- 2. Property & Economic Crimes -->
+            <div class="kpi-card kpi-property" data-kpi="property_economic" title="Click to view Property & Economic in-depth visualization & breakdown">
                 <div class="kpi-top">
                     <span class="kpi-label">Property & Financial</span>
                     <div class="kpi-icon icon-blue">💼</div>
                 </div>
-                <div class="kpi-value" id="kpiProperty">0</div>
+                <div class="kpi-value" id="kpiProperty">{{ summary.categories.property_economic }}</div>
                 <div class="kpi-footer">
-                    <span>Thefts, Burglary, Fraud & Breach of Trust</span>
+                    <span id="kpiPropertyPct" style="font-weight: 600; color: #60a5fa;">{{ summary.category_percentages.property_economic }}% of district total</span>
+                    <span>Thefts, Burglary & Fraud</span>
                 </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
             </div>
 
-            <!-- 5. Public Safety & Traffic -->
-            <div class="kpi-card kpi-safety">
+            <!-- 3. Traffic & Public Safety -->
+            <div class="kpi-card kpi-safety" data-kpi="public_safety" title="Click to view Traffic & Public Safety in-depth visualization & breakdown">
                 <div class="kpi-top">
                     <span class="kpi-label">Traffic & Public Safety</span>
-                    <div class="kpi-icon icon-amber">⚠️</div>
+                    <div class="kpi-icon icon-amber">🚗</div>
                 </div>
-                <div class="kpi-value" id="kpiSafety">0</div>
+                <div class="kpi-value" id="kpiSafety">{{ summary.categories.public_safety }}</div>
                 <div class="kpi-footer">
-                    <span>Rash Driving & Fatal Negligence</span>
+                    <span id="kpiSafetyPct" style="font-weight: 600; color: var(--accent-amber);">{{ summary.category_percentages.public_safety }}% of district total</span>
+                    <span>Rash Driving & Fatalities</span>
+                </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
+            </div>
+
+            <!-- 4. Crimes Against Women & Children -->
+            <div class="kpi-card kpi-women" data-kpi="women_children" title="Click to view Women & Child Safety in-depth visualization & breakdown">
+                <div class="kpi-top">
+                    <span class="kpi-label">Women & Child Safety</span>
+                    <div class="kpi-icon icon-pink">🛡️</div>
+                </div>
+                <div class="kpi-value" id="kpiWomen">{{ summary.categories.women_children }}</div>
+                <div class="kpi-footer">
+                    <span id="kpiWomenPct" style="font-weight: 600; color: var(--cat-women);">{{ summary.category_percentages.women_children }}% of district total</span>
+                    <span>Assault, 498A, Rape & Abduction</span>
+                </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
+            </div>
+
+            <!-- 5. Violent Crimes -->
+            <div class="kpi-card kpi-violent" data-kpi="violent" title="Click to view Violent Crimes in-depth visualization & breakdown">
+                <div class="kpi-top">
+                    <span class="kpi-label">Violent Crimes</span>
+                    <div class="kpi-icon icon-rose">⚡</div>
+                </div>
+                <div class="kpi-value" id="kpiViolent">{{ summary.categories.violent }}</div>
+                <div class="kpi-footer">
+                    <span id="kpiViolentPct" style="font-weight: 600; color: var(--cat-violent);">{{ summary.category_percentages.violent }}% of district total</span>
+                    <span>Homicide, Robbery, Dacoity, Hurt</span>
+                </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
+            </div>
+
+            <!-- 6. Top Individual Offense -->
+            <div class="kpi-card kpi-hotspot" data-kpi="top_offense" title="Click to view leading offense deep-dive visualization & comparison">
+                <div class="kpi-top">
+                    <span class="kpi-label">Top Individual Offense</span>
+                    <div class="kpi-icon icon-purple">📌</div>
+                </div>
+                <div class="kpi-value-sub" id="kpiTopOffenseName">{{ summary.top_offense.name }}</div>
+                <div class="kpi-footer">
+                    <span id="kpiTopOffenseCount" style="font-weight:600; color: #818cf8;">{{ summary.top_offense.count }} cases ({{ summary.top_offense.percentage }}%)</span>
+                </div>
+                <div class="kpi-click-hint"><span>🔍 Click for In-Depth Visualization</span> <span class="kpi-hint-arrow">→</span></div>
+            </div>
+        </section>
+
+        <!-- ================= KPI INTERACTIVE DEEP-DIVE VISUALIZATION MODAL ================= -->
+        <div id="kpiModal" class="kpi-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="kpiModalTitle">
+            <div class="kpi-modal-container">
+                <!-- Modal Header -->
+                <div class="kpi-modal-header">
+                    <div class="kpi-modal-title-group">
+                        <div class="kpi-modal-badge-icon" id="kpiModalIcon">📊</div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 id="kpiModalTitle" class="kpi-modal-title">Property & Financial Crimes — In-Depth Analysis</h3>
+                                <span id="kpiModalCategoryBadge" class="brand-pill" style="font-size: 11px;">Property & Economic</span>
+                            </div>
+                            <p id="kpiModalSubtitle" class="kpi-modal-sub">
+                                Incidence breakdown, 7-year multi-year trajectory (2016–2022), and risk composition in Bengaluru City
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button id="kpiModalFilterBtn" class="btn-primary" style="padding: 6px 14px; font-size: 12px;" title="Filter the entire dashboard to this category">
+                            <span>Filter Dashboard</span>
+                        </button>
+                        <button id="kpiModalCloseBtn" class="kpi-modal-close-btn" aria-label="Close Deep-Dive Modal">✕</button>
+                    </div>
+                </div>
+
+                <!-- 4 KPI Telemetry Cards inside Modal -->
+                <div class="kpi-modal-stats-strip">
+                    <div class="km-stat-cell">
+                        <span class="km-stat-label">Category Recorded Cases</span>
+                        <span class="km-stat-value" id="kmTotalCases">--</span>
+                        <span class="km-stat-sub" id="kmPeriodSub">Selected Period</span>
+                    </div>
+                    <div class="km-stat-cell">
+                        <span class="km-stat-label">District Crime Share</span>
+                        <span class="km-stat-value" id="kmSharePct">--%</span>
+                        <span class="km-stat-sub">Of Total Recorded Crimes</span>
+                    </div>
+                    <div class="km-stat-cell">
+                        <span class="km-stat-label">7-Year Net Trajectory</span>
+                        <span class="km-stat-value" id="kmNetTrajectory">--</span>
+                        <span class="km-stat-sub" id="kmTrajectorySub">2016 → 2022 Shift</span>
+                    </div>
+                    <div class="km-stat-cell">
+                        <span class="km-stat-label">Primary Threat Contributor</span>
+                        <span class="km-stat-value" id="kmTopContributor" style="font-size: 14px;">--</span>
+                        <span class="km-stat-sub" id="kmContributorSub">Highest volume IPC head</span>
+                    </div>
+                </div>
+
+                <!-- 2-Column Charts Grid inside Modal -->
+                <div class="kpi-modal-charts-grid">
+                    <!-- Chart 1: Specific Crime Heads Composition Breakdown -->
+                    <div class="kpi-modal-chart-card">
+                        <div class="km-chart-header">
+                            <div>
+                                <span class="chart-eyebrow">Composition Analysis</span>
+                                <h4 id="kpiModalChart1Heading" class="km-chart-title">Specific Crime Heads Distribution</h4>
+                            </div>
+                            <span id="kpiModalChart1Badge" class="brand-pill" style="font-size: 10.5px;">Incidence Share</span>
+                        </div>
+                        <div class="km-canvas-wrapper" style="height: 280px; position: relative;">
+                            <canvas id="kpiModalChart1Canvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: 7-Year Multi-Year Progression (2016-2022) -->
+                    <div class="kpi-modal-chart-card">
+                        <div class="km-chart-header">
+                            <div>
+                                <span class="chart-eyebrow">Multi-Year Trajectory</span>
+                                <h4 id="kpiModalChart2Heading" class="km-chart-title">Annual Historical Progression (2016 → 2022)</h4>
+                            </div>
+                            <span id="kpiModalChart2Badge" class="trend-pill" style="font-size: 10.5px; background: rgba(6, 182, 212, 0.15); color: #06b6d4;">Timeline Analytics</span>
+                        </div>
+                        <div class="km-canvas-wrapper" style="height: 280px; position: relative;">
+                            <canvas id="kpiModalChart2Canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specific Offense Heads Registry Table inside Modal -->
+                <div class="kpi-modal-table-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+                            Specific IPC Offenses in this Group
+                        </span>
+                        <span id="kmTableCountNote" style="font-size: 11px; color: var(--text-muted);">
+                            Showing offenses
+                        </span>
+                    </div>
+                    <div class="km-table-wrapper">
+                        <table class="km-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Specific IPC Offense</th>
+                                    <th>Classification</th>
+                                    <th>Recorded Cases</th>
+                                    <th>Category Share</th>
+                                    <th>Severity Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kpiModalTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CHARTS ROW 1: SPECIFIC OFFENSES & DONUT ================= -->
+        <section class="charts-grid-row">
+            <!-- Specific Crime Heads Bar Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">District Incidence Breakdown</span>
+                        <h2 class="chart-title" id="primaryChartTitle">Highest Recorded Offenses in <span class="district-title-span">{{ default_district }}</span></h2>
+                        <span class="chart-desc" id="primaryChartDesc">Frequency of specific IPC crime heads in this district (<span id="barChartYearSpan">{{ summary.year_display }}</span>)</span>
+                    </div>
+                </div>
+                <div class="chart-container-rel" style="height: 340px;">
+                    <canvas id="offensesBarCanvas"></canvas>
                 </div>
             </div>
 
-            <!-- 6. Top Hotspot District -->
-            <div class="kpi-card kpi-hotspot">
-                <div class="kpi-top">
-                    <span class="kpi-label">Highest Incidence Hub</span>
-                    <div class="kpi-icon icon-purple">📍</div>
+            <!-- Crime Category Share Donut Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Category Share</span>
+                        <h2 class="chart-title">Crime Category Composition</h2>
+                        <span class="chart-desc">Proportional distribution across the 6 major IPC crime families (<span id="donutYearSpan">{{ summary.year_display }}</span>)</span>
+                    </div>
                 </div>
-                <div class="kpi-value-sub" id="kpiHotspotDistrict">Loading...</div>
-                <div class="kpi-footer">
-                    <span id="kpiHotspotCount" style="font-weight:600; color: #818cf8;">-</span>
+                <div class="chart-container-rel" style="height: 220px;">
+                    <canvas id="donutChartCanvas"></canvas>
+                </div>
+                <div class="category-legend-list" id="categoryLegendContainer">
+                    {% for c in categories_list %}
+                    <div class="cat-legend-item">
+                        <span class="cat-dot" style="background: {{ c.color }};"></span>
+                        <span class="cat-name">{{ c.label }}</span>
+                        <span class="cat-count">{{ c.percentage }}%</span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </section>
 
-        <!-- ================= CHARTS ROW 1: TRAJECTORY & CATEGORY DONUT ================= -->
+        <!-- ================= CHARTS ROW 2: MULTI-YEAR TRAJECTORY & SAFETY-CRITICAL ================= -->
         <section class="charts-grid-row">
-            <!-- Multi-Year Longitudinal Trajectory Chart -->
+            <!-- Multi-Year Annual Trajectory Line Chart (2016-2022) -->
             <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title-area">
                         <span class="chart-eyebrow">Multi-Year Trajectory</span>
-                        <h2 class="chart-title">7-Year Crime Evolution (2016–2022)</h2>
-                        <span class="chart-desc">Longitudinal incident trends across major crime categories</span>
+                        <h2 class="chart-title">Annual Crime Progression (2016 → 2022 Timeline)</h2>
+                        <span class="chart-desc">Historical 7-year timeline and category trends for <span class="district-title-span">{{ default_district }}</span></span>
+                    </div>
+                    <div id="trendSummaryBadge" class="brand-pill" style="font-size: 11px;">
+                        7-Year Verified NCRB Data
                     </div>
                 </div>
-                <div class="chart-container-rel">
-                    <canvas id="trajectoryChartCanvas"></canvas>
+                <div class="chart-container-rel" style="height: 330px;">
+                    <canvas id="trendLineCanvas"></canvas>
                 </div>
             </div>
 
-            <!-- Crime Category Breakdown Donut Chart -->
+            <!-- Safety-Critical Offenses Breakdown -->
             <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title-area">
-                        <span class="chart-eyebrow">Composition Analysis</span>
-                        <h2 class="chart-title">Crime Category Share</h2>
-                        <span class="chart-desc">Proportional distribution of IPC crime categories</span>
+                        <span class="chart-eyebrow">High-Severity Focus</span>
+                        <h2 class="chart-title">Violent & Safety-Critical Offenses</h2>
+                        <span class="chart-desc">Murder, Rape, Kidnapping, Robbery, Dacoity, Riots & Grievous Hurt</span>
                     </div>
                 </div>
-                <div class="chart-container-rel" style="height: 230px;">
-                    <canvas id="donutChartCanvas"></canvas>
-                </div>
-                <div class="category-legend-list" id="categoryLegendContainer">
-                    <!-- Populated dynamically via JS -->
+                <div class="chart-container-rel" style="height: 330px;">
+                    <canvas id="criticalOffensesCanvas"></canvas>
                 </div>
             </div>
         </section>
 
-        <!-- ================= CHARTS ROW 2: DISTRICT RANKINGS & RADAR PROFILE ================= -->
-        <section class="charts-grid-row">
-            <!-- District Rankings Bar Chart -->
+        <!-- ================= CHARTS ROW 3: RADAR PROFILE & MULTI-YEAR SUMMARY ================= -->
+        <section class="charts-grid-row equal">
+            <!-- Crime Severity Dimension Radar Chart -->
             <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title-area">
-                        <span class="chart-eyebrow">Comparative Rankings</span>
-                        <h2 class="chart-title">Top Incident Districts</h2>
-                        <span class="chart-desc">Click any bar to inspect in-depth district profile</span>
-                    </div>
-                    <div class="chart-controls">
-                        <div class="filter-btn-group" role="group" aria-label="Ranking Metric">
-                            <button class="filter-btn ranking-filter-btn active" data-metric="total">Total</button>
-                            <button class="filter-btn ranking-filter-btn" data-metric="violent">Violent</button>
-                            <button class="filter-btn ranking-filter-btn" data-metric="property_economic">Property</button>
-                            <button class="filter-btn ranking-filter-btn" data-metric="women_children">Women Safety</button>
-                        </div>
+                        <span class="chart-eyebrow">Multi-Axial Profile</span>
+                        <h2 class="chart-title" id="radarChartTitle">District Risk Dimension Profile</h2>
+                        <span class="chart-desc">Proportional footprint across the 6 crime categories (<span id="radarYearSpan">{{ summary.year_display }}</span>)</span>
                     </div>
                 </div>
-                <div class="chart-container-rel" style="height: 350px;">
-                    <canvas id="rankingChartCanvas"></canvas>
-                </div>
-            </div>
-
-            <!-- Crime Severity Radar Chart -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title-area">
-                        <span class="chart-eyebrow">Risk Dimension</span>
-                        <h2 class="chart-title">Crime Severity Profile</h2>
-                        <span class="chart-desc">Multi-axial proportion benchmark</span>
-                    </div>
-                </div>
-                <div class="chart-container-rel" style="height: 350px;">
+                <div class="chart-container-rel" style="height: 320px;">
                     <canvas id="radarChartCanvas"></canvas>
                 </div>
             </div>
-        </section>
 
-        <!-- ================= DISTRICT HEATMAP & INTENSITY GRID ================= -->
-        <section class="district-heatmap-section">
-            <div class="heatmap-header">
-                <div class="chart-title-area">
-                    <span class="chart-eyebrow">Geographic Intensity Matrix</span>
-                    <h2 class="chart-title">District Incident Density Map</h2>
-                    <span class="chart-desc">Color-coded incidence density. Click any district cell for complete multi-year intelligence profile.</span>
-                </div>
-                <div class="heatmap-legend">
-                    <span>Incidence Tiers:</span>
-                    <div class="legend-scale">
-                        <div class="legend-box" style="background: var(--accent-emerald);"></div>
-                        <span>Low</span>
-                    </div>
-                    <div class="legend-scale">
-                        <div class="legend-box" style="background: var(--accent-cyan);"></div>
-                        <span>Moderate</span>
-                    </div>
-                    <div class="legend-scale">
-                        <div class="legend-box" style="background: var(--accent-amber);"></div>
-                        <span>Elevated</span>
-                    </div>
-                    <div class="legend-scale">
-                        <div class="legend-box" style="background: var(--accent-rose);"></div>
-                        <span>Severe</span>
+            <!-- Multi-Year Annual Comparison Summary Card -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <span class="chart-eyebrow">Historical Shift Analysis</span>
+                        <h2 class="chart-title">7-Year Shift & Milestone Comparison</h2>
+                        <span class="chart-desc">Key shifts recorded across 2016–2022 official NCRB reporting</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="heatmap-grid" id="heatmapGridContainer">
-                <!-- Populated dynamically via JS -->
+                <div class="annual-shift-grid" id="annualShiftContainer" style="display: flex; flex-direction: column; gap: 8px; justify-content: center; height: 100%; padding: 4px 0;">
+                    <!-- Dynamically populated by dashboard.js with 2016-2022 stats -->
+                </div>
             </div>
         </section>
 
-        <!-- ================= DATA EXPLORER TABLE ================= -->
+        <!-- ================= DATA EXPLORER TABLE (ALL 34 CRIME HEADS) ================= -->
         <section class="table-card">
             <div class="table-toolbar">
                 <div class="chart-title-area">
-                    <span class="chart-eyebrow">Dataset Registry</span>
-                    <h2 class="chart-title">District Crime Data Explorer</h2>
-                    <span class="chart-desc">Interactive data table with multi-column sorting and instant search</span>
+                    <span class="chart-eyebrow">Official IPC Crime Registry</span>
+                    <h2 class="chart-title">Complete Crime Heads Breakdown for <span id="tableDistrictName">{{ default_district }}</span> (<span id="tableYearName">{{ summary.year_display }}</span>)</h2>
+                    <span class="chart-desc">All 34 individual IPC crime classifications recorded in this district</span>
                 </div>
-                <input
-                    type="text"
-                    id="tableSearchInput"
-                    class="table-search-input"
-                    placeholder="Search district name..."
-                    aria-label="Search District in Table"
-                >
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="text" id="tableSearchInput" class="table-search-input"
+                        placeholder="Search offense name or category..." aria-label="Search Offense in Table">
+                    <button id="tableClearBtn" class="table-clear-btn" style="display: none;" title="Clear search">✕</button>
+                </div>
             </div>
 
             <div class="table-responsive">
                 <table class="data-table" id="dataTable">
                     <thead>
                         <tr>
-                            <th data-sort="district">District ⬍</th>
-                            <th data-sort="state">State</th>
-                            <th class="num-cell" data-sort="total">Total IPC ⬍</th>
-                            <th class="num-cell" data-sort="violent">Violent Crimes ⬍</th>
-                            <th class="num-cell" data-sort="women_children">Women Safety ⬍</th>
-                            <th class="num-cell" data-sort="property_economic">Property & Thefts ⬍</th>
-                            <th class="num-cell" data-sort="public_safety">Traffic Safety ⬍</th>
-                            <th class="num-cell" data-sort="murder">Murder ⬍</th>
+                            <th data-sort="name">Crime Head / Offense ⬍</th>
+                            <th data-sort="category">Category Family ⬍</th>
+                            <th class="num-cell" data-sort="count">Recorded Cases ⬍</th>
+                            <th class="num-cell" data-sort="percentage">Share of District Total (%) ⬍</th>
+                            <th data-sort="tier">Focus Tier</th>
                         </tr>
                     </thead>
                     <tbody id="dataTableBody">
-                        <!-- Populated dynamically via JS -->
+                        {% for r in table.rows %}
+                        <tr>
+                            <td style="font-weight: 600; color: var(--text-main);">
+                                <span style="margin-right: 6px;">{{ r.icon }}</span> {{ r.name }}
+                            </td>
+                            <td>
+                                <span style="color: {{ r.color }}; font-weight: 500;">{{ r.category_label }}</span>
+                            </td>
+                            <td class="num-cell bold-cell">{{ r.count }}</td>
+                            <td class="num-cell" style="font-family: var(--font-mono); color: var(--text-muted);">{{ r.percentage }}%</td>
+                            <td>
+                                <span class="tile-tier-badge" style="
+                                    {% if r.tier_badge == 'danger' %}background: rgba(244, 63, 94, 0.2); color: #f43f5e;
+                                    {% elif r.tier_badge == 'warning' %}background: rgba(245, 158, 11, 0.2); color: #f59e0b;
+                                    {% else %}background: rgba(59, 130, 246, 0.2); color: #60a5fa;{% endif %}
+                                ">{{ r.tier }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
 
             <div class="table-pagination">
-                <span id="tablePaginationInfo">Loading records...</span>
-                <div class="pagination-controls">
-                    <button id="tablePrevBtn" class="page-btn" disabled>← Previous</button>
-                    <button id="tableNextBtn" class="page-btn">Next →</button>
-                </div>
+                <span id="tablePaginationInfo">Showing all {{ table.total_heads }} individual IPC crime heads in {{ default_district }} ({{ summary.year_display }})</span>
             </div>
         </section>
 
     </main>
-
-    <!-- ================= DISTRICT DEEP DIVE MODAL ================= -->
-    <div id="districtDetailModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalDistrictTitle">
-        <div class="modal-container">
-            <button id="modalCloseBtn" class="modal-close-btn" aria-label="Close Modal">✕</button>
-
-            <div class="modal-header">
-                <span class="chart-eyebrow">District Deep-Dive Intelligence</span>
-                <h2 id="modalDistrictTitle" class="modal-district-name">District Name</h2>
-                <div id="modalStateSubtitle" class="modal-state-sub">State Subtitle</div>
-            </div>
-
-            <div class="modal-kpi-row">
-                <div class="modal-kpi-item">
-                    <label>Total Crimes (Latest Year)</label>
-                    <span id="modalTotalCrimes">0</span>
-                </div>
-                <div class="modal-kpi-item">
-                    <label>Violent Offenses</label>
-                    <span id="modalViolentCrimes" style="color: var(--cat-violent);">0</span>
-                </div>
-                <div class="modal-kpi-item">
-                    <label>State Average Benchmark</label>
-                    <span id="modalStateAverage" style="color: var(--primary);">0</span>
-                </div>
-            </div>
-
-            <div>
-                <span class="chart-eyebrow">Historical Incident Trajectory</span>
-                <div class="modal-chart-area">
-                    <canvas id="modalTimelineCanvas"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- ================= FOOTER ================= -->
     <footer class="dashboard-footer">
         <div class="footer-brand">
             <span>⚖ KCAVP</span>
             <span>•</span>
-            <span>Karnataka & National Crime Analytics Platform</span>
+            <span>Karnataka Crime Analytics & Visualization Platform</span>
         </div>
         <div>
-            Data Sources: Official District-Wise IPC Statistics 2016 & 2017–2022
+            Data Sources: Official Karnataka District-Wise IPC Statistics (SCRB / NCRB 2016–2022 Verified Datasets)
         </div>
         <div>
-            © 2026 KCAVP. All rights reserved.
+            © 2026 KCAVP. Single District Crime Intelligence Platform with Continuous Preferred District Surveillance.
         </div>
     </footer>
 
-    <!-- Pass Django Pre-computed Payloads into Window for Immediate Rendering -->
+    <!-- Pre-computed Data Payloads -->
     <script>
-        window.KCAVP_DEFAULT_STATE = "{{ default_state }}";
-        window.KCAVP_DEFAULT_YEAR = "{{ default_year }}";
-        window.KCAVP_INITIAL_SUMMARY = {{ initial_summary_json|safe }};
-        window.KCAVP_INITIAL_TRENDS = {{ initial_trends_json|safe }};
-        window.KCAVP_INITIAL_RANKINGS = {{ initial_rankings_json|safe }};
-        window.KCAVP_INITIAL_CATEGORIES = {{ initial_categories_json|safe }};
-        window.KCAVP_INITIAL_TABLE = {{ initial_table_json|safe }};
-        window.KCAVP_STATES = {{ states_list_json|safe }};
+        window.KCAVP_DEFAULT_DISTRICT = "{{ default_district }}";
+        window.KCAVP_SELECTED_YEAR = "{{ selected_year }}";
+        window.KCAVP_INITIAL_SUMMARY = {{ initial_summary_json | safe }};
+        window.KCAVP_INITIAL_OFFENSES = {{ initial_offenses_json | safe }};
+        window.KCAVP_INITIAL_CRITICAL = {{ initial_critical_json | safe }};
+        window.KCAVP_INITIAL_CATEGORIES = {{ initial_categories_json | safe }};
+        window.KCAVP_INITIAL_TABLE = {{ initial_table_json | safe }};
+        window.KCAVP_INITIAL_TRENDS = {{ initial_trends_json | safe }};
+        window.KCAVP_DISTRICTS = {{ districts_list_json | safe }};
     </script>
 
-    <!-- Dashboard Controller -->
-    <script src="{% static 'js/dashboard.js' %}"></script>
+    <!-- Dashboard Controller & Chart Engine -->
+    <script src="{% static 'js/dashboard.js' %}?v={{ timestamp }}"></script>
 </body>
+
 </html>

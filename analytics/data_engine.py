@@ -4,108 +4,58 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Standardized Crime Categories mapping across 2016 and 2017+ schemas
-CATEGORY_MAPPINGS_2016 = {
-    'violent': [
-        'murder', 'attempt_to_commit_murder',
-        'culpable_homicide_not_amounting_to_murder',
-        'attempt_to_commit_culpable_homicide',
-        'dacoity', 'robbery', 'grievous_hurt', 'arson'
-    ],
-    'women_children': [
-        'rape', 'attempt_to_commit_rape', 'assault_on_women',
-        'insult_to_the_modesty_of_women', 'cruelty_by_husband_or_his_relatives',
-        'dowry_deaths', 'kidnapping_and_abduction',
-        'human_trafficking', 'importation_of_girls_from_foreign_country'
-    ],
-    'property_economic': [
-        'theft', 'criminal_trespass_or_burglary', 'cheating',
-        'forgery', 'counterfeiting', 'criminal_breach_of_trust', 'extortion'
-    ],
-    'public_safety': [
-        'incidence_of_rash_driving', 'causing_death_by_negligence'
-    ],
-    'public_order': [
-        'riots', 'unlawful_assembly', 'offences_against_state',
-        'offences_promoting_enmity_between_diff_grp'
-    ],
-    'other': [
-        'other_ipc_crimes', 'unnatural_offence', 'disclosure_of_identity_of_victims',
-        'mkng_preparation_and_assembly_for_comm_dacoity'
-    ]
-}
-
-CATEGORY_MAPPINGS_2017 = {
-    'violent': [
-        'murder', 'clpbl_hmcrd_not_amt_murder', 'atmpt_cmmt_murder',
-        'atmpt_cmmt_clpb_hmcrd', 'atmpt_cmmt_suicide', 'abetment_of_suicide',
-        'vlntrly_caus_simple_hurt', 'vlntrly_caus_dangers_weapons',
-        'vlntrly_caus_pub_srvnt_duty', 'hrt_endgrng_lf_safety', 'other_simple_hurt',
-        'vlntrly_caus_grvus_hurt', 'grvus_hrt_dangerous_wepn', 'grvus_hrt_pub_srvnt_duty',
-        'grvus_hrt_lf_safety', 'other_grievous_hurt', 'acid_attack', 'atmpt_acid_attack',
-        'dacoity', 'dacoity_with_murder', 'robbery', 'atmpt_dacoity_robbery',
-        'mkng_prprtn_assmbly_cmmttng_dcty', 'arson'
-    ],
-    'women_children': [
-        'rape', 'atmpt_rape', 'dowry_deaths', 'assault_on_women',
-        'crlty_husbnd_relatives', 'insult_modesty_women', 'stalking',
-        'voyeurism', 'intnt_disrbe', 'sex_hrrsmt_work_office_prms',
-        'sex_hrrsmt_pub_trnsprt_sys', 'sex_hrrsmt_shelter_homes',
-        'sex_hrrsmt_other_places', 'missing_child_kidnpd', 'other_kidnp_abduc',
-        'kidnp_abdctn_begging', 'kidnp_abdctn_murder', 'kidnapping_for_ransom',
-        'kidnp_abdctn_marrg', 'proc_minor_girls', 'import_girls_frgn_cntry',
-        'other_kidnp_abduc_sec_365_369', 'human_trafficking', 'exp_traf_person',
-        'sell_minors_prost', 'buy_minors_prost', 'miscarr_infant_foetic_aband'
-    ],
-    'property_economic': [
-        'auto_motor_vehicle_theft', 'other_thefts', 'day_time_burglary',
-        'night_burglary', 'criminal_trespass', 'cheating', 'cheating_impersonation',
-        'forgery', 'criminal_breach_of_trust', 'criminal_misappropriation',
-        'dsh_hon_rec_deal_stl_prop', 'extortion_and_blackmailing',
-        'counterfeit_coin', 'cntrfte_govt_stamp', 'cntrft_seal_mark',
-        'cntrft_curr_bank_notes', 'bank_frauds', 'atm_fraud',
-        'credit_debit_card_fraud', 'other_frauds'
-    ],
-    'public_safety': [
-        'rash_driving_pub_way', 'csng_hrt_rsh_nglgnt_drvng_pblc_wy',
-        'grvus_hrt_rsh_nglgnt_drvng', 'hit_and_run', 'acdnt_other_than_hit_and_run_',
-        'deaths_negl_rel_rail_acdnt', 'deaths_due_med_negnc',
-        'deaths_neg_civic_bodies', 'deaths_other_negnc', 'obstruction_pub_way'
-    ],
-    'public_order': [
-        'rioting_communal_religious', 'rioting_sectarian', 'rioting_industrial',
-        'rioting_political', 'rioting_caste_conflict', 'rioting_agrarian',
-        'rioting_students', 'rioting_vigilants', 'rioting_money_dispute',
-        'rioting_water_dispute', 'rioting_land_property_dispute',
-        'rioting_family_disputes', 'rioting_enmity_rivalry', 'riot_elec_pwr_disp',
-        'riot_andolan_morcha', 'riot_polc_prsnl_gvt_srvnt', 'other_rioting',
-        'prmt_enmty_grps', 'impt_asrtns_prjudc_intgrtn', 'affray',
-        'ofnc_agnst_state_sedition', 'ofnc_agnst_state_other',
-        'ofnc_agnst_pub_trnqul', 'disbnc_ordr_prmlgtd_pblc_srvnt'
-    ],
-    'other': [
-        'other_ipc_crimes', 'unnatural_offences', 'wrngful_rest_cnfm',
-        'ofnc_elections', 'harboring_offender', 'sale_food_drugs',
-        'sale_obscene_books_objects', 'obscene_acts_songs_public_places',
-        'ofnc_religion', 'ofnc_mischief', 'crcl_false_fake_news_rumours',
-        'criminal_intimidation'
-    ]
+# Metadata for all 34 individual IPC crime heads in the official dataset
+CRIME_HEAD_META = {
+    'murder': {'name': 'Murder', 'category': 'violent', 'icon': '⚔️'},
+    'attempt_to_commit_murder': {'name': 'Attempt to Commit Murder', 'category': 'violent', 'icon': '⚡'},
+    'culpable_homicide_not_amounting_to_murder': {'name': 'Culpable Homicide', 'category': 'violent', 'icon': '⚠️'},
+    'attempt_to_commit_culpable_homicide': {'name': 'Attempted Culpable Homicide', 'category': 'violent', 'icon': '⚠️'},
+    'rape': {'name': 'Rape', 'category': 'women_children', 'icon': '🛡️'},
+    'attempt_to_commit_rape': {'name': 'Attempted Rape', 'category': 'women_children', 'icon': '🛡️'},
+    'kidnapping_and_abduction': {'name': 'Kidnapping & Abduction', 'category': 'women_children', 'icon': '🚨'},
+    'dacoity': {'name': 'Dacoity (Gang Robbery)', 'category': 'violent', 'icon': '🗡️'},
+    'mkng_preparation_and_assembly_for_comm_dacoity': {'name': 'Preparation for Dacoity', 'category': 'other', 'icon': '🔍'},
+    'robbery': {'name': 'Robbery', 'category': 'violent', 'icon': '💰'},
+    'criminal_trespass_or_burglary': {'name': 'Burglary & Criminal Trespass', 'category': 'property_economic', 'icon': '🚪'},
+    'theft': {'name': 'Theft', 'category': 'property_economic', 'icon': '💼'},
+    'unlawful_assembly': {'name': 'Unlawful Assembly', 'category': 'public_order', 'icon': '👥'},
+    'riots': {'name': 'Rioting', 'category': 'public_order', 'icon': '🔥'},
+    'criminal_breach_of_trust': {'name': 'Criminal Breach of Trust', 'category': 'property_economic', 'icon': '🤝'},
+    'cheating': {'name': 'Cheating & Fraud', 'category': 'property_economic', 'icon': '💳'},
+    'forgery': {'name': 'Forgery', 'category': 'property_economic', 'icon': '📝'},
+    'counterfeiting': {'name': 'Counterfeiting Currency/Goods', 'category': 'property_economic', 'icon': '💵'},
+    'arson': {'name': 'Arson', 'category': 'violent', 'icon': '🔥'},
+    'grievous_hurt': {'name': 'Grievous Hurt', 'category': 'violent', 'icon': '🩹'},
+    'dowry_deaths': {'name': 'Dowry Deaths', 'category': 'women_children', 'icon': '⚠️'},
+    'assault_on_women': {'name': 'Assault on Women (Modesty Outrage)', 'category': 'women_children', 'icon': '🛡️'},
+    'insult_to_the_modesty_of_women': {'name': 'Insult to Modesty of Women', 'category': 'women_children', 'icon': '🛡️'},
+    'cruelty_by_husband_or_his_relatives': {'name': 'Cruelty by Husband/Relatives (498A)', 'category': 'women_children', 'icon': '💔'},
+    'importation_of_girls_from_foreign_country': {'name': 'Importation of Girls', 'category': 'women_children', 'icon': '🚨'},
+    'causing_death_by_negligence': {'name': 'Causing Death by Negligence', 'category': 'public_safety', 'icon': '⚠️'},
+    'offences_against_state': {'name': 'Offences Against the State', 'category': 'public_order', 'icon': '⚖️'},
+    'offences_promoting_enmity_between_diff_grp': {'name': 'Promoting Enmity Between Groups', 'category': 'public_order', 'icon': '🗣️'},
+    'extortion': {'name': 'Extortion & Blackmail', 'category': 'property_economic', 'icon': '💰'},
+    'disclosure_of_identity_of_victims': {'name': 'Disclosure of Identity of Victims', 'category': 'other', 'icon': '🔒'},
+    'incidence_of_rash_driving': {'name': 'Incidence of Rash Driving', 'category': 'public_safety', 'icon': '🚗'},
+    'human_trafficking': {'name': 'Human Trafficking', 'category': 'women_children', 'icon': '🚨'},
+    'unnatural_offence': {'name': 'Unnatural Offences', 'category': 'other', 'icon': '⚖️'},
+    'other_ipc_crimes': {'name': 'Other IPC Crimes', 'category': 'other', 'icon': '📄'}
 }
 
 CATEGORY_NAMES = {
-    'violent': 'Violent Crimes',
-    'women_children': 'Crimes Against Women & Children',
     'property_economic': 'Property & Economic Offences',
     'public_safety': 'Public Safety & Traffic Offences',
+    'women_children': 'Crimes Against Women & Children',
+    'violent': 'Violent Crimes',
     'public_order': 'Public Order & Rioting',
     'other': 'Other IPC Crimes'
 }
 
 CATEGORY_COLORS = {
-    'violent': '#f43f5e',           # Rose / Red
-    'women_children': '#ec4899',     # Pink
     'property_economic': '#3b82f6',  # Blue
     'public_safety': '#f59e0b',      # Amber
+    'women_children': '#ec4899',     # Pink
+    'violent': '#f43f5e',           # Rose / Red
     'public_order': '#8b5cf6',       # Purple
     'other': '#64748b'               # Slate
 }
@@ -122,100 +72,48 @@ class CrimeDataEngine:
 
     def __init__(self):
         self.records = []
-        self.states = []
-        self.districts_by_state = {}
+        self.districts = []
         self.years = ['2016', '2017', '2018', '2019', '2020', '2021', '2022']
+        self.records_by_district_year = {}
+        self.aggregated_by_district = {}
+        self.state_name = "Karnataka"
         self._load_datasets()
 
-    def _clean_district_name(self, name):
-        if not name:
-            return "Unknown"
-        name = name.strip()
-        # Normalize minor title differences
-        return name
-
     def _load_datasets(self):
-        path_2016 = BASE_DIR / 'districtwise-ipc-crimes-2016.csv'
-        path_onwards = BASE_DIR / 'districtwise-ipc-crimes-2017-onwards.csv'
+        file_path = BASE_DIR / 'karnataka_crime_data.csv'
+        if not os.path.exists(file_path):
+            file_path = BASE_DIR / 'districtwise-ipc-crimes-2016.csv'
 
         records = []
-        states_set = set()
-        districts_map = {}
+        districts_set = set()
+        by_district_year = {}
+        years_found = set()
 
-        # 1. Ingest 2016 CSV
-        if os.path.exists(path_2016):
-            with open(path_2016, 'r', encoding='utf-8', errors='replace') as f:
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     state = (row.get('state_name') or '').strip()
-                    if not state:
+                    if state != 'Karnataka':
                         continue
-                    district = self._clean_district_name(row.get('district_name'))
-                    states_set.add(state)
-                    districts_map.setdefault(state, set()).add(district)
 
-                    # Compute category totals and total crimes
-                    cat_totals = {'violent': 0, 'women_children': 0, 'property_economic': 0, 'public_safety': 0, 'public_order': 0, 'other': 0}
-                    total_crimes = 0
-                    raw_numeric = {}
+                    year = (row.get('year') or '2016').strip()
+                    years_found.add(year)
 
-                    for col, val in row.items():
-                        if col in ['id', 'year', 'state_name', 'state_code', 'district_name', 'district_code', 'registration_circles']:
-                            continue
-                        try:
-                            num = int(val or 0)
-                        except (ValueError, TypeError):
-                            num = 0
-                        raw_numeric[col] = num
-                        total_crimes += num
+                    circle = (row.get('registration_circles') or '').strip()
+                    parent_district = (row.get('district_name') or '').strip()
+                    district_display = circle if circle else parent_district
 
-                        for cat, cols in CATEGORY_MAPPINGS_2016.items():
-                            if col in cols:
-                                cat_totals[cat] += num
-                                break
-
-                    rec = {
-                        'id': row.get('id', ''),
-                        'year': '2016',
-                        'state': state,
-                        'district': district,
-                        'circle': (row.get('registration_circles') or '').strip(),
-                        'total_crimes': total_crimes,
-                        'categories': cat_totals,
-                        'key_metrics': {
-                            'murder': raw_numeric.get('murder', 0),
-                            'attempt_murder': raw_numeric.get('attempt_to_commit_murder', 0),
-                            'rape': raw_numeric.get('rape', 0),
-                            'assault_on_women': raw_numeric.get('assault_on_women', 0),
-                            'kidnapping': raw_numeric.get('kidnapping_and_abduction', 0),
-                            'theft': raw_numeric.get('theft', 0),
-                            'robbery': raw_numeric.get('robbery', 0),
-                            'dacoity': raw_numeric.get('dacoity', 0),
-                            'cheating': raw_numeric.get('cheating', 0),
-                            'burglary': raw_numeric.get('criminal_trespass_or_burglary', 0),
-                            'rash_driving': raw_numeric.get('incidence_of_rash_driving', 0),
-                            'riots': raw_numeric.get('riots', 0),
-                        },
-                        'raw': raw_numeric
+                    cat_totals = {
+                        'violent': 0,
+                        'women_children': 0,
+                        'property_economic': 0,
+                        'public_safety': 0,
+                        'public_order': 0,
+                        'other': 0
                     }
-                    records.append(rec)
-
-        # 2. Ingest 2017-2022 CSV
-        if os.path.exists(path_onwards):
-            with open(path_onwards, 'r', encoding='utf-8', errors='replace') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    state = (row.get('state_name') or '').strip()
-                    if not state:
-                        continue
-                    district = self._clean_district_name(row.get('district_name'))
-                    year = (row.get('year') or '').strip()
-                    states_set.add(state)
-                    districts_map.setdefault(state, set()).add(district)
-
-                    cat_totals = {'violent': 0, 'women_children': 0, 'property_economic': 0, 'public_safety': 0, 'public_order': 0, 'other': 0}
                     total_crimes = 0
-                    raw_numeric = {}
+                    raw_crimes = {}
 
                     for col, val in row.items():
                         if col in ['id', 'year', 'state_name', 'state_code', 'district_name', 'district_code', 'registration_circles']:
@@ -224,396 +122,436 @@ class CrimeDataEngine:
                             num = int(val or 0)
                         except (ValueError, TypeError):
                             num = 0
-                        raw_numeric[col] = num
+                        raw_crimes[col] = num
                         total_crimes += num
 
-                        for cat, cols in CATEGORY_MAPPINGS_2017.items():
-                            if col in cols:
-                                cat_totals[cat] += num
-                                break
-
-                    # Key metrics normalization
-                    theft_sum = raw_numeric.get('auto_motor_vehicle_theft', 0) + raw_numeric.get('other_thefts', 0)
-                    burglary_sum = raw_numeric.get('day_time_burglary', 0) + raw_numeric.get('night_burglary', 0) + raw_numeric.get('criminal_trespass', 0)
-                    kidnap_sum = (raw_numeric.get('missing_child_kidnpd', 0) + raw_numeric.get('other_kidnp_abduc', 0) +
-                                  raw_numeric.get('kidnp_abdctn_begging', 0) + raw_numeric.get('kidnp_abdctn_murder', 0) +
-                                  raw_numeric.get('kidnapping_for_ransom', 0) + raw_numeric.get('kidnp_abdctn_marrg', 0) +
-                                  raw_numeric.get('other_kidnp_abduc_sec_365_369', 0))
-                    rash_sum = raw_numeric.get('rash_driving_pub_way', 0) + raw_numeric.get('csng_hrt_rsh_nglgnt_drvng_pblc_wy', 0)
-                    riots_sum = sum(v for k, v in raw_numeric.items() if k.startswith('rioting_') or k.startswith('riot_'))
+                        meta = CRIME_HEAD_META.get(col)
+                        if meta:
+                            cat_totals[meta['category']] += num
 
                     rec = {
                         'id': row.get('id', ''),
                         'year': year,
-                        'state': state,
-                        'district': district,
-                        'circle': (row.get('registration_circles') or '').strip(),
+                        'state': 'Karnataka',
+                        'district': district_display,
+                        'parent_district': parent_district,
+                        'circle': circle,
                         'total_crimes': total_crimes,
                         'categories': cat_totals,
-                        'key_metrics': {
-                            'murder': raw_numeric.get('murder', 0),
-                            'attempt_murder': raw_numeric.get('atmpt_cmmt_murder', 0),
-                            'rape': raw_numeric.get('rape', 0),
-                            'assault_on_women': raw_numeric.get('assault_on_women', 0),
-                            'kidnapping': kidnap_sum,
-                            'theft': theft_sum,
-                            'robbery': raw_numeric.get('robbery', 0),
-                            'dacoity': raw_numeric.get('dacoity', 0) + raw_numeric.get('dacoity_with_murder', 0),
-                            'cheating': raw_numeric.get('cheating', 0) + raw_numeric.get('bank_frauds', 0) + raw_numeric.get('atm_fraud', 0),
-                            'burglary': burglary_sum,
-                            'rash_driving': rash_sum,
-                            'riots': riots_sum,
-                        },
-                        'raw': raw_numeric
+                        'crimes': raw_crimes
                     }
                     records.append(rec)
+                    districts_set.add(district_display)
+                    by_district_year[(district_display.lower(), year)] = rec
 
         self.records = records
-        # Put Karnataka first in states list if present, then alphabetical
-        all_states = sorted(list(states_set))
-        if 'Karnataka' in all_states:
-            all_states.remove('Karnataka')
-            all_states.insert(0, 'Karnataka')
-        self.states = all_states
-        self.districts_by_state = {s: sorted(list(districts_map[s])) for s in districts_map}
+        self.districts = sorted(list(districts_set))
+        if years_found:
+            self.years = sorted(list(years_found))
+        self.records_by_district_year = by_district_year
 
-    def get_states(self):
-        return self.states
+        # Pre-calculate multi-year aggregate for every district across 2016-2022
+        min_year = self.years[0] if self.years else '2016'
+        max_year = self.years[-1] if self.years else '2022'
+        period_str = f"{min_year}–{max_year}"
+
+        agg_map = {}
+        for d in self.districts:
+            d_records = [r for r in records if r['district'] == d]
+            if not d_records:
+                continue
+
+            agg_total = sum(r['total_crimes'] for r in d_records)
+            agg_cats = {c: 0 for c in CATEGORY_NAMES}
+            agg_crimes = {c: 0 for c in CRIME_HEAD_META}
+
+            for r in d_records:
+                for cat, val in r['categories'].items():
+                    agg_cats[cat] = agg_cats.get(cat, 0) + val
+                for crime, val in r['crimes'].items():
+                    agg_crimes[crime] = agg_crimes.get(crime, 0) + val
+
+            agg_map[d.lower()] = {
+                'id': f'agg_{d}',
+                'year': f'{min_year}-{max_year}',
+                'year_display': f'All Years ({period_str})',
+                'state': 'Karnataka',
+                'district': d,
+                'parent_district': d_records[0]['parent_district'],
+                'circle': d_records[0]['circle'],
+                'total_crimes': agg_total,
+                'categories': agg_cats,
+                'crimes': agg_crimes,
+                'annual_records': {r['year']: r for r in d_records}
+            }
+        self.aggregated_by_district = agg_map
 
     def get_districts(self, state=None):
-        if not state or state.lower() in ['all', 'all india']:
-            all_d = set()
-            for dlist in self.districts_by_state.values():
-                all_d.update(dlist)
-            return sorted(list(all_d))
-        return self.districts_by_state.get(state, [])
+        return self.districts
 
-    def filter_records(self, state=None, year=None, district=None):
-        res = self.records
-        if state and state.lower() not in ['all', 'all india']:
-            res = [r for r in res if r['state'].lower() == state.lower()]
-        if year and year.lower() not in ['all', 'all years']:
-            res = [r for r in res if r['year'] == str(year)]
-        if district and district.lower() not in ['all', 'all districts']:
-            res = [r for r in res if r['district'].lower() == district.lower()]
-        return res
+    def get_years(self):
+        # Return all years descending, with 'all' first
+        desc_years = sorted(self.years, reverse=True)
+        return ['all'] + desc_years
 
-    def get_summary(self, state='Karnataka', year='2022'):
-        """Computes executive KPIs, YoY deltas, and breakdown for selected state & year."""
-        current_records = self.filter_records(state=state, year=year)
+    def _resolve_district_name(self, district):
+        if not district or district.lower() in ['all', 'default', 'none', 'null']:
+            return 'Bengaluru City' if 'Bengaluru City' in self.districts else self.districts[0]
 
-        # Total crimes and category sums
-        total_crimes = sum(r['total_crimes'] for r in current_records)
-        cat_sums = {
-            'violent': sum(r['categories']['violent'] for r in current_records),
-            'women_children': sum(r['categories']['women_children'] for r in current_records),
-            'property_economic': sum(r['categories']['property_economic'] for r in current_records),
-            'public_safety': sum(r['categories']['public_safety'] for r in current_records),
-            'public_order': sum(r['categories']['public_order'] for r in current_records),
-            'other': sum(r['categories']['other'] for r in current_records),
+        d_lower = district.lower().strip()
+        for d in self.districts:
+            if d.lower() == d_lower:
+                return d
+        for d in self.districts:
+            if d_lower in d.lower():
+                return d
+        for r in self.records:
+            if d_lower in r['parent_district'].lower():
+                return r['district']
+        return 'Bengaluru City' if 'Bengaluru City' in self.districts else self.districts[0]
+
+    def get_record(self, district=None, year=None):
+        """Fetches a district record for a specific year (2016-2022) or aggregate ('all')."""
+        d_name = self._resolve_district_name(district)
+        d_key = d_name.lower()
+
+        clean_year = str(year).strip().lower() if year else 'all'
+        if clean_year in ['all', 'combined', 'total', '2016-2022', 'none']:
+            if d_key in self.aggregated_by_district:
+                return self.aggregated_by_district[d_key]
+            rec = next((r for r in self.records if r['district'].lower() == d_key), None)
+            return rec or self.records[0]
+
+        # Specific year lookup
+        match = self.records_by_district_year.get((d_key, clean_year))
+        if match:
+            return match
+
+        # If district was newly carved out in later years, synthesize a zero-crime profile for earlier years
+        parent_rec = self.records_by_district_year.get((d_key, self.years[-1]))
+        parent_district = parent_rec['parent_district'] if parent_rec else d_name
+        return {
+            'id': f'{clean_year}_{d_name}',
+            'year': clean_year,
+            'state': 'Karnataka',
+            'district': d_name,
+            'parent_district': parent_district,
+            'circle': d_name,
+            'total_crimes': 0,
+            'categories': {c: 0 for c in CATEGORY_NAMES},
+            'crimes': {c: 0 for c in CRIME_HEAD_META}
         }
 
-        # Key metrics aggregated
-        key_metrics_sum = {
-            'murder': sum(r['key_metrics']['murder'] for r in current_records),
-            'attempt_murder': sum(r['key_metrics']['attempt_murder'] for r in current_records),
-            'rape': sum(r['key_metrics']['rape'] for r in current_records),
-            'assault_on_women': sum(r['key_metrics']['assault_on_women'] for r in current_records),
-            'kidnapping': sum(r['key_metrics']['kidnapping'] for r in current_records),
-            'theft': sum(r['key_metrics']['theft'] for r in current_records),
-            'robbery': sum(r['key_metrics']['robbery'] for r in current_records),
-            'dacoity': sum(r['key_metrics']['dacoity'] for r in current_records),
-            'cheating': sum(r['key_metrics']['cheating'] for r in current_records),
-            'burglary': sum(r['key_metrics']['burglary'] for r in current_records),
-            'rash_driving': sum(r['key_metrics']['rash_driving'] for r in current_records),
-            'riots': sum(r['key_metrics']['riots'] for r in current_records),
-        }
+    def get_district_summary(self, district='Bengaluru City', year='all'):
+        """Computes executive KPIs for the selected district and year with YoY growth calculations."""
+        clean_year = str(year).strip().lower() if year else 'all'
+        r = self.get_record(district, year=clean_year)
+        d_name = r['district']
+        total = r['total_crimes']
+        cats = r['categories']
+        crimes = r['crimes']
 
-        # District ranking to find top district
-        district_totals = {}
-        for r in current_records:
-            d = r['district']
-            district_totals[d] = district_totals.get(d, 0) + r['total_crimes']
+        specific_crimes = {k: v for k, v in crimes.items() if k != 'other_ipc_crimes'}
+        top_key, top_val = max(specific_crimes.items(), key=lambda x: x[1]) if specific_crimes else ('theft', 0)
+        top_name = CRIME_HEAD_META.get(top_key, {}).get('name', top_key.replace('_', ' ').title())
 
-        top_district = None
-        top_district_count = 0
-        if district_totals:
-            top_district, top_district_count = max(district_totals.items(), key=lambda x: x[1])
+        cat_pcts = {}
+        for cat, val in cats.items():
+            cat_pcts[cat] = round((val / total) * 100, 1) if total > 0 else 0
 
-        # Previous year delta calculation
-        prev_year = str(int(year) - 1) if year and year.isdigit() and int(year) > 2016 else None
-        prev_total = 0
+        homicides = crimes.get('murder', 0) + crimes.get('attempt_to_commit_murder', 0)
+        thefts_burglaries = crimes.get('theft', 0) + crimes.get('criminal_trespass_or_burglary', 0)
+        women_assaults = crimes.get('assault_on_women', 0) + crimes.get('rape', 0)
+        traffic_accidents = crimes.get('incidence_of_rash_driving', 0) + crimes.get('causing_death_by_negligence', 0)
+
+        # Build complete annual trajectory for all available years
+        annual_trajectory = {}
+        for y in self.years:
+            yr_rec = self.records_by_district_year.get((d_name.lower(), y))
+            annual_trajectory[y] = yr_rec['total_crimes'] if yr_rec else 0
+
+        # Dynamic YoY Growth calculations
+        prev_year = None
         yoy_growth = 0.0
-        yoy_diff = 0
-        if prev_year:
-            prev_records = self.filter_records(state=state, year=prev_year)
-            prev_total = sum(r['total_crimes'] for r in prev_records)
-            if prev_total > 0:
-                yoy_diff = total_crimes - prev_total
-                yoy_growth = round(((total_crimes - prev_total) / prev_total) * 100, 2)
 
-        district_count = len(district_totals)
+        if clean_year in self.years:
+            idx = self.years.index(clean_year)
+            if idx > 0:
+                prev_yr_str = self.years[idx - 1]
+                prev_year = prev_yr_str
+                prev_tot = annual_trajectory.get(prev_yr_str, 0)
+                if prev_tot > 0:
+                    yoy_growth = round(((total - prev_tot) / prev_tot) * 100, 1)
+        else:
+            first_y = self.years[0]
+            last_y = self.years[-1]
+            prev_year = f"{first_y} vs {last_y}"
+            first_tot = annual_trajectory.get(first_y, 0)
+            last_tot = annual_trajectory.get(last_y, 0)
+            if first_tot > 0:
+                yoy_growth = round(((last_tot - first_tot) / first_tot) * 100, 1)
+
+        year_display = f'All Years ({self.years[0]}–{self.years[-1]})' if clean_year in ['all', 'combined'] else f'Year {clean_year}'
 
         return {
-            'state': state,
-            'year': year,
-            'total_crimes': total_crimes,
+            'district': d_name,
+            'parent_district': r['parent_district'],
+            'state': 'Karnataka',
+            'year': clean_year,
+            'year_display': year_display,
+            'total_crimes': total,
+            'total': total,  # alias for backward compatibility
+            'violent': cats.get('violent', 0),
+            'women_children': cats.get('women_children', 0),
+            'property_economic': cats.get('property_economic', 0),
+            'public_safety': cats.get('public_safety', 0),
+            'public_order': cats.get('public_order', 0),
+            'other': cats.get('other', 0),
+            'categories': cats,
+            'category_percentages': cat_pcts,
+            'top_offense': {
+                'key': top_key,
+                'name': top_name,
+                'count': top_val,
+                'percentage': round((top_val / total) * 100, 1) if total > 0 else 0
+            },
+            'top_district': d_name,
+            'top_district_count': total,
             'prev_year': prev_year,
-            'prev_total': prev_total,
             'yoy_growth': yoy_growth,
-            'yoy_diff': yoy_diff,
-            'district_count': district_count,
-            'top_district': top_district,
-            'top_district_count': top_district_count,
-            'categories': cat_sums,
-            'key_metrics': key_metrics_sum
+            'annual_trajectory': annual_trajectory,
+            'key_highlights': {
+                'homicides': homicides,
+                'thefts_burglaries': thefts_burglaries,
+                'women_assaults': women_assaults,
+                'traffic_accidents': traffic_accidents,
+                'cheating': crimes.get('cheating', 0),
+                'riots': crimes.get('riots', 0),
+            }
         }
 
-    def get_trends(self, state='Karnataka', district=None):
-        """Returns longitudinal 2016-2022 trajectory for state or district."""
-        years_list = ['2016', '2017', '2018', '2019', '2020', '2021', '2022']
-        trend_data = []
+    def get_district_offenses(self, district='Bengaluru City', year='all', category=None, limit=12):
+        """Returns sorted list of specific individual crime heads for this district and year."""
+        r = self.get_record(district, year=year)
+        total = r['total_crimes']
+        crimes = r['crimes']
 
-        for yr in years_list:
-            recs = self.filter_records(state=state, year=yr, district=district)
-            tot = sum(r['total_crimes'] for r in recs)
-            v = sum(r['categories']['violent'] for r in recs)
-            w = sum(r['categories']['women_children'] for r in recs)
-            p = sum(r['categories']['property_economic'] for r in recs)
-            s = sum(r['categories']['public_safety'] for r in recs)
-            o = sum(r['categories']['public_order'] for r in recs)
-            trend_data.append({
-                'year': yr,
-                'total': tot,
-                'violent': v,
-                'women_children': w,
-                'property_economic': p,
-                'public_safety': s,
-                'public_order': o
+        offenses = []
+        for key, count in crimes.items():
+            meta = CRIME_HEAD_META.get(key, {'name': key.replace('_', ' ').title(), 'category': 'other', 'icon': '📌'})
+            cat = meta['category']
+
+            if category and category.lower() != 'all' and cat.lower() != category.lower():
+                continue
+
+            pct = round((count / total) * 100, 1) if total > 0 else 0
+            offenses.append({
+                'key': key,
+                'name': meta['name'],
+                'category': cat,
+                'category_label': CATEGORY_NAMES.get(cat, cat.title()),
+                'color': CATEGORY_COLORS.get(cat, '#64748b'),
+                'icon': meta['icon'],
+                'count': count,
+                'percentage': pct,
+                # Aliases for backward compatibility
+                'district': meta['name'],
+                'total': count
             })
 
-        return trend_data
-
-    def get_district_rankings(self, state='Karnataka', year='2022', metric='total', limit=15):
-        """Returns top districts ranked by metric."""
-        recs = self.filter_records(state=state, year=year)
-        agg = {}
-
-        for r in recs:
-            d = r['district']
-            if d not in agg:
-                agg[d] = {
-                    'district': d,
-                    'state': r['state'],
-                    'total': 0,
-                    'violent': 0,
-                    'women_children': 0,
-                    'property_economic': 0,
-                    'public_safety': 0,
-                    'public_order': 0,
-                    'murder': 0,
-                    'theft': 0,
-                    'rape': 0
-                }
-            agg[d]['total'] += r['total_crimes']
-            agg[d]['violent'] += r['categories']['violent']
-            agg[d]['women_children'] += r['categories']['women_children']
-            agg[d]['property_economic'] += r['categories']['property_economic']
-            agg[d]['public_safety'] += r['categories']['public_safety']
-            agg[d]['public_order'] += r['categories']['public_order']
-            agg[d]['murder'] += r['key_metrics']['murder']
-            agg[d]['theft'] += r['key_metrics']['theft']
-            agg[d]['rape'] += r['key_metrics']['rape']
-
-        rank_key = metric if metric in ['violent', 'women_children', 'property_economic', 'public_safety', 'public_order', 'murder', 'theft', 'rape'] else 'total'
-        sorted_districts = sorted(agg.values(), key=lambda x: x[rank_key], reverse=True)
-
+        offenses.sort(key=lambda x: x['count'], reverse=True)
         if limit and limit > 0:
-            return sorted_districts[:limit]
-        return sorted_districts
+            return offenses[:limit]
+        return offenses
 
-    def get_category_breakdown(self, state='Karnataka', year='2022', district=None):
-        """Returns category breakdown with percentages and sub-crime highlights."""
-        recs = self.filter_records(state=state, year=year, district=district)
-        cat_sums = {k: 0 for k in CATEGORY_NAMES}
+    def get_district_category_distribution(self, district='Bengaluru City', year='all'):
+        """Returns the 6 category breakdown for the donut chart of this single district and year."""
+        r = self.get_record(district, year=year)
+        total = r['total_crimes']
+        cats = r['categories']
 
-        for r in recs:
-            for cat in cat_sums:
-                cat_sums[cat] += r['categories'][cat]
-
-        total = sum(cat_sums.values())
         result = []
         for cat, label in CATEGORY_NAMES.items():
-            cnt = cat_sums[cat]
+            cnt = cats.get(cat, 0)
             pct = round((cnt / total) * 100, 1) if total > 0 else 0
             result.append({
                 'id': cat,
                 'label': label,
                 'count': cnt,
                 'percentage': pct,
-                'color': CATEGORY_COLORS[cat]
+                'color': CATEGORY_COLORS.get(cat, '#64748b')
             })
 
         return {
+            'district': r['district'],
+            'year': r.get('year', year),
             'total': total,
             'categories': result
         }
 
-    def get_district_detail(self, state='Karnataka', district='Bengaluru Urban'):
-        """Comprehensive deep dive profile for a single district."""
-        d_lower = district.lower().strip()
-        s_lower = state.lower().strip() if state and state.lower() not in ['all', 'all india'] else None
+    def get_district_critical_offenses(self, district='Bengaluru City', year='all'):
+        """Safety-critical offenses for this single district and year."""
+        r = self.get_record(district, year=year)
+        crimes = r['crimes']
 
-        # 1. Exact match on district_name
-        dist_records = [r for r in self.records if (not s_lower or r['state'].lower() == s_lower) and r['district'].lower() == d_lower]
+        critical_keys = [
+            'murder', 'attempt_to_commit_murder', 'rape',
+            'kidnapping_and_abduction', 'robbery', 'dacoity',
+            'grievous_hurt', 'arson', 'riots'
+        ]
 
-        # 2. Match on circle if not found
-        if not dist_records:
-            dist_records = [r for r in self.records if (not s_lower or r['state'].lower() == s_lower) and r['circle'].lower() == d_lower]
-
-        # 3. Partial substring match on district_name
-        if not dist_records:
-            dist_records = [r for r in self.records if (not s_lower or r['state'].lower() == s_lower) and (d_lower in r['district'].lower() or r['district'].lower() in d_lower)]
-
-        # 4. Partial substring match on circle
-        if not dist_records:
-            dist_records = [r for r in self.records if (not s_lower or r['state'].lower() == s_lower) and (d_lower in r['circle'].lower() or r['circle'].lower() in d_lower)]
-
-        if not dist_records:
-            return {'error': f'District {district} not found'}
-
-        matched_district = dist_records[0]['district']
-        matched_state = dist_records[0]['state']
-
-        # Year-by-year trajectory
-        years_dict = {}
-        for r in dist_records:
-            yr = r['year']
-            years_dict.setdefault(yr, {
-                'year': yr,
-                'total': 0,
-                'violent': 0,
-                'women_children': 0,
-                'property_economic': 0,
-                'public_safety': 0,
-                'public_order': 0,
-                'murder': 0,
-                'rape': 0,
-                'theft': 0,
-                'rash_driving': 0
+        data = []
+        for k in critical_keys:
+            meta = CRIME_HEAD_META.get(k, {'name': k, 'category': 'violent', 'icon': '⚡'})
+            cnt = crimes.get(k, 0)
+            data.append({
+                'key': k,
+                'name': meta['name'],
+                'category': meta['category'],
+                'icon': meta['icon'],
+                'count': cnt
             })
-            years_dict[yr]['total'] += r['total_crimes']
-            years_dict[yr]['violent'] += r['categories']['violent']
-            years_dict[yr]['women_children'] += r['categories']['women_children']
-            years_dict[yr]['property_economic'] += r['categories']['property_economic']
-            years_dict[yr]['public_safety'] += r['categories']['public_safety']
-            years_dict[yr]['public_order'] += r['categories']['public_order']
-            years_dict[yr]['murder'] += r['key_metrics']['murder']
-            years_dict[yr]['rape'] += r['key_metrics']['rape']
-            years_dict[yr]['theft'] += r['key_metrics']['theft']
-            years_dict[yr]['rash_driving'] += r['key_metrics']['rash_driving']
 
-        timeline = [years_dict[y] for y in sorted(years_dict.keys())]
+        data.sort(key=lambda x: x['count'], reverse=True)
+        return data
 
-        # Latest year stats
-        latest_year = sorted(years_dict.keys())[-1] if years_dict else '2022'
-        latest_stat = years_dict[latest_year]
+    def get_district_multi_year_trend(self, district='Bengaluru City'):
+        """Returns full annual timeline from 2016 to 2022 for the selected district."""
+        d_name = self._resolve_district_name(district)
+        parent_district = d_name
 
-        # State average for benchmarking
-        state_latest_recs = self.filter_records(state=matched_state, year=latest_year)
-        state_total = sum(r['total_crimes'] for r in state_latest_recs)
-        state_dist_count = len(set(r['district'] for r in state_latest_recs)) or 1
-        state_avg = round(state_total / state_dist_count, 1)
-
-        # Safety rating estimation based on ratio to state average
-        ratio = latest_stat['total'] / (state_avg or 1)
-        if ratio < 0.5:
-            safety_level = "Low Incident Zone"
-            safety_badge = "success"
-        elif ratio < 1.0:
-            safety_level = "Moderate Incidence"
-            safety_badge = "info"
-        elif ratio < 1.8:
-            safety_level = "Elevated Incidence"
-            safety_badge = "warning"
-        else:
-            safety_level = "High Incident Zone"
-            safety_badge = "danger"
-
-        return {
-            'district': matched_district,
-            'state': matched_state,
-            'latest_year': latest_year,
-            'latest_stat': latest_stat,
-            'state_avg': state_avg,
-            'safety_level': safety_level,
-            'safety_badge': safety_badge,
-            'timeline': timeline,
-            'categories': {
-                'violent': latest_stat['violent'],
-                'women_children': latest_stat['women_children'],
-                'property_economic': latest_stat['property_economic'],
-                'public_safety': latest_stat['public_safety'],
-                'public_order': latest_stat['public_order'],
-            }
-        }
-
-    def get_table_data(self, state='Karnataka', year='2022', search='', sort_by='total', sort_order='desc', page=1, page_size=20):
-        """Returns paginated district rows for the data explorer table."""
-        recs = self.filter_records(state=state, year=year)
-        agg = {}
-
-        for r in recs:
-            d = r['district']
-            if d not in agg:
-                agg[d] = {
-                    'district': d,
-                    'state': r['state'],
-                    'year': r['year'],
+        series_list = []
+        for y in self.years:
+            r = self.records_by_district_year.get((d_name.lower(), y))
+            if r:
+                parent_district = r['parent_district']
+                series_list.append({
+                    'year': y,
+                    'total': r['total_crimes'],
+                    'violent': r['categories']['violent'],
+                    'property_economic': r['categories']['property_economic'],
+                    'public_safety': r['categories']['public_safety'],
+                    'women_children': r['categories']['women_children'],
+                    'public_order': r['categories']['public_order'],
+                    'other': r['categories']['other'],
+                    'theft': r['crimes'].get('theft', 0),
+                    'murder': r['crimes'].get('murder', 0)
+                })
+            else:
+                series_list.append({
+                    'year': y,
                     'total': 0,
                     'violent': 0,
-                    'women_children': 0,
                     'property_economic': 0,
                     'public_safety': 0,
-                    'murder': 0,
+                    'women_children': 0,
+                    'public_order': 0,
+                    'other': 0,
                     'theft': 0,
-                    'rape': 0
-                }
-            agg[d]['total'] += r['total_crimes']
-            agg[d]['violent'] += r['categories']['violent']
-            agg[d]['women_children'] += r['categories']['women_children']
-            agg[d]['property_economic'] += r['categories']['property_economic']
-            agg[d]['public_safety'] += r['categories']['public_safety']
-            agg[d]['murder'] += r['key_metrics']['murder']
-            agg[d]['theft'] += r['key_metrics']['theft']
-            agg[d]['rape'] += r['key_metrics']['rape']
-
-        rows = list(agg.values())
-
-        # Search filter
-        if search:
-            s = search.lower().strip()
-            rows = [r for r in rows if s in r['district'].lower() or s in r['state'].lower()]
-
-        # Sorting
-        valid_sort_keys = ['district', 'total', 'violent', 'women_children', 'property_economic', 'public_safety', 'murder', 'theft', 'rape']
-        key = sort_by if sort_by in valid_sort_keys else 'total'
-        reverse = (sort_order.lower() != 'asc')
-
-        if key == 'district':
-            rows.sort(key=lambda x: x['district'].lower(), reverse=reverse)
-        else:
-            rows.sort(key=lambda x: x[key], reverse=reverse)
-
-        total_rows = len(rows)
-        start = (page - 1) * page_size
-        end = start + page_size
-        paginated_rows = rows[start:end]
+                    'murder': 0
+                })
 
         return {
-            'total_rows': total_rows,
-            'page': page,
-            'page_size': page_size,
-            'total_pages': max(1, (total_rows + page_size - 1) // page_size),
-            'rows': paginated_rows
+            'district': d_name,
+            'parent_district': parent_district,
+            'years': list(self.years),
+            'totals': [s['total'] for s in series_list],
+            'series': series_list
         }
+
+    def get_district_table(self, district='Bengaluru City', year='all', category=None, search='', sort_by='count', sort_order='desc'):
+        """Returns all 34 individual IPC crime heads for this district and year."""
+        clean_year = str(year).strip().lower() if year else 'all'
+        r = self.get_record(district, year=clean_year)
+        total = r['total_crimes']
+        crimes = r['crimes']
+
+        rows = []
+        for key, count in crimes.items():
+            meta = CRIME_HEAD_META.get(key, {'name': key.replace('_', ' ').title(), 'category': 'other', 'icon': '📌'})
+            cat = meta['category']
+
+            if category and category.lower() != 'all' and cat.lower() != category.lower():
+                continue
+
+            name = meta['name']
+            if search:
+                s = search.lower().strip()
+                if s not in name.lower() and s not in cat.lower():
+                    continue
+
+            pct = round((count / total) * 100, 2) if total > 0 else 0.0
+
+            threshold_high = 500 if clean_year != 'all' else 2500
+            threshold_mod = 100 if clean_year != 'all' else 500
+
+            if count > threshold_high or cat == 'violent':
+                tier = 'High Focus'
+                tier_badge = 'danger'
+            elif count > threshold_mod or cat == 'women_children':
+                tier = 'Moderate'
+                tier_badge = 'warning'
+            else:
+                tier = 'Low Frequency'
+                tier_badge = 'info'
+
+            rows.append({
+                'key': key,
+                'name': name,
+                'district': name,            # backward compatibility for old scripts
+                'state': r['district'],      # backward compatibility for old scripts
+                'total': count,              # backward compatibility for old scripts
+                'violent': count if cat == 'violent' else 0,
+                'women_children': count if cat == 'women_children' else 0,
+                'property_economic': count if cat == 'property_economic' else 0,
+                'public_safety': count if cat == 'public_safety' else 0,
+                'murder': count if key == 'murder' else 0,
+                'theft': count if key == 'theft' else 0,
+                'category': cat,
+                'category_label': CATEGORY_NAMES.get(cat, cat.title()),
+                'color': CATEGORY_COLORS.get(cat, '#64748b'),
+                'icon': meta['icon'],
+                'count': count,
+                'percentage': pct,
+                'tier': tier,
+                'tier_badge': tier_badge
+            })
+
+        reverse = (sort_order.lower() != 'asc')
+        if sort_by == 'name':
+            rows.sort(key=lambda x: x['name'].lower(), reverse=reverse)
+        elif sort_by == 'category':
+            rows.sort(key=lambda x: x['category_label'].lower(), reverse=reverse)
+        else:
+            rows.sort(key=lambda x: x['count'], reverse=reverse)
+
+        return {
+            'district': r['district'],
+            'parent_district': r['parent_district'],
+            'year': clean_year,
+            'total_crimes': total,
+            'total_heads': len(rows),
+            'page': 1,
+            'page_size': len(rows),
+            'total_pages': 1,
+            'total_rows': len(rows),
+            'rows': rows
+        }
+
+    # Backward compatibility helpers
+    def get_summary(self, district='Bengaluru City', **kwargs):
+        year = kwargs.get('year', 'all')
+        return self.get_district_summary(district, year=year)
+
+    def get_category_breakdown(self, district='Bengaluru City', **kwargs):
+        year = kwargs.get('year', 'all')
+        return self.get_district_category_distribution(district, year=year)
+
+    def get_district_detail(self, district='Bengaluru City', **kwargs):
+        year = kwargs.get('year', 'all')
+        return self.get_district_summary(district, year=year)
+
+    def get_table_data(self, district='Bengaluru City', **kwargs):
+        dist = kwargs.get('district') or kwargs.get('state') or district
+        year = kwargs.get('year', 'all')
+        return self.get_district_table(district=dist, year=year, **kwargs)
