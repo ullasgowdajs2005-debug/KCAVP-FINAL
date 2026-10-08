@@ -1295,189 +1295,264 @@
         });
     }
 
-    // Ask KCAVP natural-language query discovery
+    // =========================================================================
+    // KCAVP MULTI-DISTRICT AI CRIME INTELLIGENCE CHATBOT CONTROLLER
+    // Analyzes ALL 38 districts across 2016-2022 authentic Karnataka IPC records
+    // =========================================================================
     const askInput = document.getElementById('askKcavpInput');
     const askBtn = document.getElementById('askKcavpBtn');
     const askBox = document.getElementById('askResultBox');
+    const askClearBtn = document.getElementById('askClearBtn');
 
-    function executeQuery(query) {
+    // Floating Chatbot DOM elements
+    const floatChatBtn = document.getElementById('kcavpFloatingChatBtn');
+    const chatDrawer = document.getElementById('kcavpChatDrawer');
+    const chatCloseBtn = document.getElementById('kcavpChatCloseBtn');
+    const chatClearBtn = document.getElementById('kcavpChatClearBtn');
+    const chatMessages = document.getElementById('kcavpChatMessages');
+    const chatInput = document.getElementById('kcavpChatInput');
+    const chatSendBtn = document.getElementById('kcavpChatSendBtn');
+
+    function executeQuery(query, source = 'card') {
         if (!query || !query.trim()) return;
-        const q = query.toLowerCase().trim();
+        const q = query.trim();
 
+        // Show loading state in the in-page card
         if (askBox) {
             askBox.style.display = 'block';
-            askBox.innerHTML = `<span style="color: var(--accent-cyan);">Analyzing authentic Karnataka 2016-2022 records...</span>`;
+            askBox.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; color: var(--accent-cyan); padding: 8px 0;">
+                    <span class="kcavp-spinner"></span>
+                    <span>Analyzing all 38 Karnataka districts & 34 IPC crime categories (2016–2022)...</span>
+                </div>
+            `;
+            if (askClearBtn) askClearBtn.style.display = 'inline-block';
         }
 
-        // Special query: Pinned district check
-        if (q.includes('prefer') || q.includes('track') || q.includes('home') || q.includes('pin')) {
-            const pinnedDist = state.pinnedDistrict;
-            fetch(`/api/summary/?district=${encodeURIComponent(pinnedDist)}&year=all`)
+        // Also append user message in floating chat drawer if used from chat or drawer is visible
+        if (source === 'drawer' || (chatDrawer && chatDrawer.style.display !== 'none')) {
+            appendChatUserMessage(q);
+            appendChatBotLoading();
+        }
+
+        const payload = {
+            query: q,
+            district: state.selectedDistrict,
+            year: state.selectedYear,
+            pinned_district: state.pinnedDistrict
+        };
+
+        fetch('/api/chatbot/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+            return r.json();
+        })
+        .then(data => {
+            renderChatbotResult(data, q, source);
+        })
+        .catch(err => {
+            console.warn('POST failed, falling back to GET query:', err);
+            // Fallback to GET endpoint
+            const getUrl = `/api/chatbot/?query=${encodeURIComponent(q)}&district=${encodeURIComponent(state.selectedDistrict)}&year=${encodeURIComponent(state.selectedYear)}&pinned_district=${encodeURIComponent(state.pinnedDistrict || '')}`;
+            fetch(getUrl)
                 .then(r => r.json())
-                .then(sum => {
-                    fetch(`/api/trends/?district=${encodeURIComponent(pinnedDist)}`)
-                        .then(r2 => r2.json())
-                        .then(tr => {
-                            const series = tr.series || [];
-                            const last = series[series.length - 1] || {};
-                            const first = series[0] || {};
-                            const netChg = first.total > 0 ? (((last.total - first.total) / first.total) * 100).toFixed(1) : 0;
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: #fbbf24; font-size: 14px; margin-bottom: 6px;">
-                                    ⭐ Continuous Surveillance Deck: ${pinnedDist}
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
-                                    Your pinned district is <strong style="color: #fff;">${pinnedDist}</strong> (monitored autonomously in the Continuous Surveillance Deck with its own gauge & momentum charts).<br>
-                                    • Total IPC cases recorded (2016–2022): <strong style="color: #fff;">${formatNumber(sum.total_crimes)}</strong><br>
-                                    • Primary threat focus: <strong>${sum.top_offense?.name}</strong> (${formatNumber(sum.top_offense?.count)} cases, ${sum.top_offense?.percentage}% share)<br>
-                                    • 7-Year Net Trajectory: <strong>${netChg > 0 ? '+' : ''}${netChg}%</strong> (from ${formatNumber(first.total)} in 2016 to ${formatNumber(last.total)} in 2022).
-                                </div>
-                            `;
-                        });
+                .then(data => {
+                    renderChatbotResult(data, q, source);
+                })
+                .catch(err2 => {
+                    console.error('Chatbot API error:', err2);
+                    const errorHtml = `
+                        <div style="color: #f43f5e; padding: 6px 0;">
+                            ⚠️ Unable to complete crime query analysis. Please try again or rephrase your question.
+                        </div>
+                    `;
+                    if (askBox) askBox.innerHTML = errorHtml;
+                    removeChatBotLoading();
+                    appendChatBotMessage(errorHtml);
                 });
+        });
+    }
+
+    function renderChatbotResult(data, originalQuery, source) {
+        if (!data || data.status !== 'ok') {
+            const fallback = `<div style="color: #f59e0b;">${data?.message || 'No direct match found. Please try a different query.'}</div>`;
+            if (askBox) askBox.innerHTML = fallback;
+            removeChatBotLoading();
+            appendChatBotMessage(fallback);
             return;
         }
 
-        // Detect year in query if specified
-        let targetYear = state.selectedYear;
-        const yearMatches = ['2022', '2021', '2020', '2019', '2018', '2017', '2016'];
-        for (const ym of yearMatches) {
-            if (q.includes(ym)) {
-                targetYear = ym;
-                break;
-            }
+        // Build suggestions HTML
+        let suggestionsHtml = '';
+        if (data.suggestions && data.suggestions.length > 0) {
+            suggestionsHtml = `
+                <div class="kcavp-suggestions-wrapper">
+                    <span style="font-size: 11px; color: var(--text-faint); margin-right: 4px;">Follow-up questions:</span>
+                    ${data.suggestions.map(s => `<button class="kcavp-suggestion-chip" data-prompt="${s}">${s}</button>`).join('')}
+                </div>
+            `;
         }
 
-        fetch(`/api/summary/?district=${encodeURIComponent(state.selectedDistrict)}&year=${encodeURIComponent(targetYear)}`)
-            .then(r => r.json())
-            .then(summary => {
-                fetch(`/api/offenses/?district=${encodeURIComponent(state.selectedDistrict)}&year=${encodeURIComponent(targetYear)}&limit=34`)
-                    .then(r2 => r2.json())
-                    .then(data => {
-                        const offenses = data.offenses || [];
-                        const yearNote = targetYear === 'all' ? 'Across 2016–2022' : `In ${targetYear}`;
+        // Full in-page result card HTML
+        const cardHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 6px;">
+                <div style="font-weight: 700; color: #f8fafc; font-size: 14px;">
+                    ${data.title || 'Karnataka Crime Analytics Intelligence'}
+                </div>
+                <button id="askBoxCloseBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 0 4px;" title="Close this result">✕</button>
+            </div>
+            ${data.answer_html}
+            ${suggestionsHtml}
+        `;
 
-                        if (q.includes('trend') || q.includes('growth') || q.includes('progression') || q.includes('timeline')) {
-                            fetch(`/api/trends/?district=${encodeURIComponent(state.selectedDistrict)}`)
-                                .then(r3 => r3.json())
-                                .then(trendData => {
-                                    const series = trendData.series || [];
-                                    const first = series[0] || { total: 0 };
-                                    const last = series[series.length - 1] || { total: 0 };
-                                    const netChange = first.total > 0 ? (((last.total - first.total) / first.total) * 100).toFixed(1) : 0;
-                                    askBox.innerHTML = `
-                                        <div style="font-weight: 700; color: #38bdf8; font-size: 14px; margin-bottom: 6px;">
-                                            📈 7-Year Crime Trajectory in ${state.selectedDistrict} (2016–2022)
-                                        </div>
-                                        <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
-                                            • <strong>2016 Baseline</strong>: ${formatNumber(first.total)} cases<br>
-                                            • <strong>2020 Lockdown</strong>: ${formatNumber(series.find(s=>s.year==='2020')?.total || 0)} cases<br>
-                                            • <strong>2022 Latest</strong>: ${formatNumber(last.total)} cases<br>
-                                            Net 7-year shift: <strong style="color: #fff;">${netChange > 0 ? '+' : ''}${netChange}%</strong> overall.
-                                        </div>
-                                    `;
-                                });
-                            return;
-                        }
+        if (askBox) {
+            askBox.style.display = 'block';
+            askBox.innerHTML = cardHtml;
+            bindChatbotActions(askBox);
+            if (askClearBtn) askClearBtn.style.display = 'inline-block';
+        }
 
-                        if (q.includes('high') || q.includes('top') || q.includes('most')) {
-                            const top1 = offenses[0];
-                            const top2 = offenses[1];
-                            const top3 = offenses[2];
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: #f8fafc; font-size: 14px; margin-bottom: 6px;">
-                                    📌 Highest Recorded Offenses in ${state.selectedDistrict} (${yearNote})
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
-                                    1. <strong>${top1?.name}</strong>: ${formatNumber(top1?.count)} cases (${top1?.percentage}% of district)<br>
-                                    2. <strong>${top2?.name}</strong>: ${formatNumber(top2?.count)} cases (${top2?.percentage}%)<br>
-                                    3. <strong>${top3?.name}</strong>: ${formatNumber(top3?.count)} cases (${top3?.percentage}%)
-                                </div>
-                            `;
-                            return;
-                        }
-
-                        if (q.includes('violent') || q.includes('murder')) {
-                            const violentTotal = summary.categories?.violent || 0;
-                            const murder = offenses.find(o => o.key === 'murder')?.count || 0;
-                            const attMurder = offenses.find(o => o.key === 'attempt_to_commit_murder')?.count || 0;
-                            const robbery = offenses.find(o => o.key === 'robbery')?.count || 0;
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: var(--cat-violent); font-size: 14px; margin-bottom: 6px;">
-                                    ⚡ Violent Crimes in ${state.selectedDistrict} (${yearNote})
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
-                                    Total violent offenses: <strong style="color: #fff;">${formatNumber(violentTotal)}</strong> (${summary.category_percentages?.violent || 0}% of all crimes in this period).<br>
-                                    • Murders: <strong>${formatNumber(murder)}</strong> | Attempt to murder: <strong>${formatNumber(attMurder)}</strong><br>
-                                    • Armed Robberies: <strong>${formatNumber(robbery)}</strong>
-                                </div>
-                            `;
-                            return;
-                        }
-
-                        if (q.includes('theft') || q.includes('property') || q.includes('burglary')) {
-                            const propTotal = summary.categories?.property_economic || 0;
-                            const theft = offenses.find(o => o.key === 'theft')?.count || 0;
-                            const burglary = offenses.find(o => o.key === 'criminal_trespass_or_burglary')?.count || 0;
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: #60a5fa; font-size: 14px; margin-bottom: 6px;">
-                                    💼 Property & Financial Offenses in ${state.selectedDistrict} (${yearNote})
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
-                                    Total property/economic crimes: <strong style="color: #fff;">${formatNumber(propTotal)}</strong> cases (${summary.category_percentages?.property_economic || 0}% of district total).<br>
-                                    • Thefts: <strong>${formatNumber(theft)}</strong> cases | Burglaries: <strong>${formatNumber(burglary)}</strong> cases
-                                </div>
-                            `;
-                            return;
-                        }
-
-                        if (q.includes('women') || q.includes('child') || q.includes('rape')) {
-                            const womenTotal = summary.categories?.women_children || 0;
-                            const rape = offenses.find(o => o.key === 'rape')?.count || 0;
-                            const assault = offenses.find(o => o.key === 'assault_on_women')?.count || 0;
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: var(--cat-women); font-size: 14px; margin-bottom: 6px;">
-                                    🛡️ Women & Child Safety in ${state.selectedDistrict} (${yearNote})
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
-                                    Total safety cases recorded: <strong style="color: #fff;">${formatNumber(womenTotal)}</strong> (${summary.category_percentages?.women_children || 0}% of district crimes).<br>
-                                    • Assault on women: <strong>${formatNumber(assault)}</strong> cases | Rape cases: <strong>${formatNumber(rape)}</strong>
-                                </div>
-                            `;
-                            return;
-                        }
-
-                        const directMatch = offenses.find(o => o.name.toLowerCase().includes(q) || q.includes(o.name.toLowerCase()));
-                        if (directMatch) {
-                            askBox.innerHTML = `
-                                <div style="font-weight: 700; color: #f8fafc; font-size: 14px; margin-bottom: 6px;">
-                                    ${directMatch.icon} ${directMatch.name} in ${state.selectedDistrict} (${yearNote})
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
-                                    Recorded cases: <strong style="color: #fff;">${formatNumber(directMatch.count)}</strong> (${directMatch.percentage}% of all crimes in this period).<br>
-                                    Classification: <span style="color: ${directMatch.color}; font-weight: 600;">${directMatch.category_label}</span>.
-                                </div>
-                            `;
-                            return;
-                        }
-
-                        askBox.innerHTML = `
-                            <div style="color: var(--text-muted); font-size: 13px;">
-                                In <strong>${state.selectedDistrict}</strong> (${yearNote}), total recorded IPC crimes stand at <strong style="color: #fff;">${formatNumber(summary.total_crimes)}</strong>.<br>
-                                Property & economic crimes constitute ${summary.category_percentages?.property_economic || 0}%, traffic safety accounts for ${summary.category_percentages?.public_safety || 0}%, and violent offenses make up ${summary.category_percentages?.violent || 0}%.
-                            </div>
-                        `;
-                    });
-            });
+        // Update floating drawer if open or if initiated from drawer
+        removeChatBotLoading();
+        if (source === 'drawer' || (chatDrawer && chatDrawer.style.display !== 'none')) {
+            const drawerMsgHtml = `
+                <div style="font-weight: 700; color: #f8fafc; font-size: 13px; margin-bottom: 6px;">
+                    ${data.title}
+                </div>
+                ${data.answer_html}
+                ${suggestionsHtml}
+            `;
+            appendChatBotMessage(drawerMsgHtml);
+        }
     }
 
-    // Expose global helper for inline calls
-    window.kcavpSetDistrict = setDistrict;
+    function bindChatbotActions(container) {
+        if (!container) return;
 
+        // Bind district switch buttons inside answer
+        container.querySelectorAll('.kcavp-chat-switch-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const dist = this.getAttribute('data-district');
+                if (dist) {
+                    setDistrict(dist);
+                    // Provide tactile feedback
+                    this.style.opacity = '0.5';
+                    setTimeout(() => { this.style.opacity = '1'; }, 300);
+                }
+            });
+        });
+
+        // Bind suggestion chips
+        container.querySelectorAll('.kcavp-suggestion-chip, .kcavp-quick-tag').forEach(chip => {
+            chip.addEventListener('click', function (e) {
+                e.preventDefault();
+                const prompt = this.getAttribute('data-prompt') || this.getAttribute('data-q') || this.textContent.trim();
+                if (askInput) askInput.value = prompt;
+                if (chatInput) chatInput.value = prompt;
+                executeQuery(prompt, container === chatMessages ? 'drawer' : 'card');
+            });
+        });
+
+        // Bind close button on in-page card
+        const closeBtn = container.querySelector('#askBoxCloseBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                if (askBox) {
+                    askBox.style.display = 'none';
+                    askBox.innerHTML = '';
+                }
+                if (askClearBtn) askClearBtn.style.display = 'none';
+            });
+        }
+    }
+
+    // ==========================================
+    // Floating Chat Assistant Message Utilities
+    // ==========================================
+    function appendChatUserMessage(text) {
+        if (!chatMessages) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'kcavp-msg kcavp-msg-user';
+        msgDiv.innerHTML = `<div class="kcavp-msg-bubble">${escapeHtml(text)}</div>`;
+        chatMessages.appendChild(msgDiv);
+        scrollChatToBottom();
+    }
+
+    function appendChatBotLoading() {
+        if (!chatMessages) return;
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'kcavpChatLoadingMsg';
+        loadingDiv.className = 'kcavp-msg kcavp-msg-bot';
+        loadingDiv.innerHTML = `
+            <div class="kcavp-msg-bubble">
+                <div class="kcavp-msg-header">🤖 KCAVP Assistant</div>
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-cyan); font-size: 12.5px;">
+                    <span class="kcavp-spinner"></span>
+                    <span>Analyzing complete 38 districts dataset...</span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(loadingDiv);
+        scrollChatToBottom();
+    }
+
+    function removeChatBotLoading() {
+        const loading = document.getElementById('kcavpChatLoadingMsg');
+        if (loading && loading.parentNode) {
+            loading.parentNode.removeChild(loading);
+        }
+    }
+
+    function appendChatBotMessage(htmlContent) {
+        if (!chatMessages) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'kcavp-msg kcavp-msg-bot';
+        msgDiv.innerHTML = `
+            <div class="kcavp-msg-bubble">
+                <div class="kcavp-msg-header">🤖 KCAVP Assistant</div>
+                <div class="kcavp-msg-body">${htmlContent}</div>
+            </div>
+        `;
+        chatMessages.appendChild(msgDiv);
+        bindChatbotActions(msgDiv);
+        scrollChatToBottom();
+    }
+
+    function scrollChatToBottom() {
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ==========================================
+    // Event Listeners for In-Page Card
+    // ==========================================
     if (askBtn && askInput) {
-        askBtn.addEventListener('click', () => executeQuery(askInput.value));
+        askBtn.addEventListener('click', () => executeQuery(askInput.value, 'card'));
         askInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') executeQuery(askInput.value);
+            if (e.key === 'Enter') executeQuery(askInput.value, 'card');
+        });
+    }
+
+    if (askClearBtn) {
+        askClearBtn.addEventListener('click', () => {
+            if (askBox) {
+                askBox.style.display = 'none';
+                askBox.innerHTML = '';
+            }
+            if (askInput) askInput.value = '';
+            askClearBtn.style.display = 'none';
         });
     }
 
@@ -1485,9 +1560,75 @@
         chip.addEventListener('click', function () {
             const prompt = this.getAttribute('data-prompt');
             if (askInput) askInput.value = prompt;
-            executeQuery(prompt);
+            executeQuery(prompt, 'card');
         });
     });
+
+    // ==========================================
+    // Event Listeners for Floating Chat Widget
+    // ==========================================
+    if (floatChatBtn && chatDrawer) {
+        floatChatBtn.addEventListener('click', () => {
+            const isHidden = (chatDrawer.style.display === 'none' || !chatDrawer.style.display);
+            chatDrawer.style.display = isHidden ? 'flex' : 'none';
+            if (isHidden) {
+                if (chatInput) chatInput.focus();
+                scrollChatToBottom();
+            }
+        });
+    }
+
+    if (chatCloseBtn && chatDrawer) {
+        chatCloseBtn.addEventListener('click', () => {
+            chatDrawer.style.display = 'none';
+        });
+    }
+
+    if (chatClearBtn && chatMessages) {
+        chatClearBtn.addEventListener('click', () => {
+            chatMessages.innerHTML = `
+                <div class="kcavp-msg kcavp-msg-bot">
+                    <div class="kcavp-msg-bubble">
+                        <div class="kcavp-msg-header">🤖 KCAVP Assistant</div>
+                        <div class="kcavp-msg-body">
+                            Chat cleared. How can I assist you with Karnataka's 38 districts crime data?
+                            <div class="kcavp-chat-quick-tags">
+                                <button class="kcavp-quick-tag" data-q="How many crimes in 2022?">📅 2022 Crimes</button>
+                                <button class="kcavp-quick-tag" data-q="Which district has the highest crime?">🏆 Highest Crime District</button>
+                                <button class="kcavp-quick-tag" data-q="Safest district in Karnataka">🛡️ Safest District</button>
+                                <button class="kcavp-quick-tag" data-q="Which district has most murders in 2022?">⚔️ Most Murders in 2022</button>
+                                <button class="kcavp-quick-tag" data-q="Compare Bengaluru City and Mysuru City">⚖️ Compare Districts</button>
+                                <button class="kcavp-quick-tag" data-q="Compare 2016 and 2022">📊 2016 vs 2022</button>
+                                <button class="kcavp-quick-tag" data-q="Total crime in Karnataka">🏛️ Statewide Total</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            bindChatbotActions(chatMessages);
+        });
+    }
+
+    if (chatSendBtn && chatInput) {
+        chatSendBtn.addEventListener('click', () => {
+            const q = chatInput.value;
+            chatInput.value = '';
+            executeQuery(q, 'drawer');
+        });
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const q = chatInput.value;
+                chatInput.value = '';
+                executeQuery(q, 'drawer');
+            }
+        });
+    }
+
+    // Initialize initial chat quick tags inside chat messages
+    bindChatbotActions(chatMessages);
+
+    // Expose global helper for inline calls
+    window.kcavpSetDistrict = setDistrict;
 
     // ==========================================
     // Clear All / Reset Action

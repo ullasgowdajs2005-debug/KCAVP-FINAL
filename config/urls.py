@@ -14,6 +14,8 @@ urlpatterns = [
     path("api/categories/", views.api_categories, name="api_categories"),
     path("api/table/", views.api_table_data, name="api_table_data"),
     path("api/export-csv/", views.api_export_csv, name="api_export_csv"),
+    path("api/chatbot/", views.api_chatbot, name="api_chatbot"),
+    path("api/ask/", views.api_chatbot, name="api_ask"),
 
     # Backward compatibility aliases
     path("api/states/", views.api_districts_list, name="api_states"),

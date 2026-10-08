@@ -3,7 +3,9 @@ import csv
 import time
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from .data_engine import CrimeDataEngine
+from .chatbot_engine import CrimeChatbotEngine
 
 
 def add_no_cache_headers(response):
@@ -206,6 +208,41 @@ def api_export_csv(request):
         ])
 
     return add_no_cache_headers(response)
+
+
+@csrf_exempt
+def api_chatbot(request):
+    """Natural-language crime analytics query endpoint analyzing all 38 districts."""
+    engine = CrimeChatbotEngine.get_instance()
+
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            query = body.get('query', '')
+            district = body.get('district', '')
+            year = body.get('year', 'all')
+            pinned_district = body.get('pinned_district', None)
+        except Exception:
+            query = request.POST.get('query', '')
+            district = request.POST.get('district', '')
+            year = request.POST.get('year', 'all')
+            pinned_district = request.POST.get('pinned_district', None)
+    else:
+        query = request.GET.get('query') or request.GET.get('q', '')
+        district = request.GET.get('district', '')
+        year = request.GET.get('year', 'all')
+        pinned_district = request.GET.get('pinned_district', None)
+
+    districts_list = engine.all_districts
+    selected_district = resolve_district(district, districts_list) if district else 'Bengaluru City'
+
+    result = engine.ask(
+        query=query,
+        selected_district=selected_district,
+        selected_year=year or 'all',
+        pinned_district=pinned_district
+    )
+    return add_no_cache_headers(JsonResponse(result))
 
 
 def favicon(request):

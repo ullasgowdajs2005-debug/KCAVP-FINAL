@@ -293,32 +293,46 @@
             </div>
         </section>
 
-        <!-- ================= ASK KCAVP / SINGLE-DISTRICT QUERY ================= -->
-        <section class="ask-kcavp-card">
+        <!-- ================= ASK KCAVP / MULTI-DISTRICT INTELLIGENCE CHATBOT ================= -->
+        <section class="ask-kcavp-card" id="askKcavpSection">
             <div class="ask-header">
                 <div class="ask-title-wrapper">
                     <div class="ask-icon-badge">✦</div>
-                    <h3>Ask KCAVP & District Crime Discovery</h3>
+                    <div>
+                        <h3>Ask KCAVP — Karnataka Crime Intelligence & Analytics AI</h3>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            Analyzes all 38 Districts & 34 IPC Crime Categories (2016–2022 Verified Data)
+                        </div>
+                    </div>
+                </div>
+                <div class="ask-header-actions" style="display: flex; align-items: center; gap: 8px;">
+                    <span class="brand-pill" style="font-size: 10.5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">
+                        38 Districts Monitored
+                    </span>
+                    <button id="askClearBtn" class="chip-btn" style="display: none; padding: 2px 8px; font-size: 11px;" title="Clear AI response">✕ Clear</button>
                 </div>
             </div>
 
             <div class="ask-input-bar">
                 <input type="text" id="askKcavpInput" class="ask-input"
-                    placeholder="Search any crime in {{ default_district }} or ask about your pinned district (e.g. 'How is my pinned district doing?', '2022 thefts', 'Murders in 2021')..."
+                    placeholder="Ask anything across Karnataka or any district (e.g. 'Which district has highest crime?', 'Safest district in Karnataka', 'Compare Bengaluru and Mysuru', '2022 murders', 'Crime in Mandya')..."
                     aria-label="Ask KCAVP Query Input">
-                <button id="askKcavpBtn" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">
-                    Analyze →
+                <button id="askKcavpBtn" class="btn-primary" style="padding: 7px 16px; font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+                    <span>Analyze</span> <span>→</span>
                 </button>
             </div>
 
             <div class="ask-chips">
-                <span class="ask-chip-label">Quick Checks:</span>
-                <button class="chip-btn" id="chipPreferredStatus" data-prompt="How is my pinned district doing?">⭐ Pinned District Status</button>
-                <button class="chip-btn" data-prompt="What is the highest crime in this district?">📌 Top Offense</button>
-                <button class="chip-btn" data-prompt="How have crimes trended from 2016 to 2022?">📈 7-Year Trend</button>
-                <button class="chip-btn" data-prompt="How many violent crimes?">⚡ Violent Crimes</button>
-                <button class="chip-btn" data-prompt="Women and child safety cases">🛡️ Women Safety</button>
-                <button class="chip-btn" data-prompt="Theft and burglary cases">💼 Property & Thefts</button>
+                <span class="ask-chip-label">Quick Analytics:</span>
+                <button class="chip-btn" data-prompt="How many crimes in 2022?">📅 2022 Crime Overview</button>
+                <button class="chip-btn" data-prompt="Which district has the highest crime?">🏆 Highest Crime Districts</button>
+                <button class="chip-btn" data-prompt="Safest district in Karnataka">🛡️ Safest Districts</button>
+                <button class="chip-btn" data-prompt="Which district has the most murders in 2022?">⚔️ Most Murders in 2022</button>
+                <button class="chip-btn" data-prompt="Total crime in Karnataka">🏛️ Statewide Total</button>
+                <button class="chip-btn" data-prompt="Compare Bengaluru City and Mysuru City">⚖️ Compare Bengaluru vs Mysuru</button>
+                <button class="chip-btn" data-prompt="Compare 2016 and 2022">📊 2016 vs 2022 Shift</button>
+                <button class="chip-btn" data-prompt="Which year had the highest crime?">📈 Peak Crime Year</button>
+                <button class="chip-btn" id="chipPreferredStatus" data-prompt="How is my pinned district doing?">⭐ Pinned District</button>
             </div>
 
             <div id="askResultBox" class="ask-result-box" role="status"></div>
@@ -700,6 +714,68 @@
             © 2026 KCAVP. Single District Crime Intelligence Platform with Continuous Preferred District Surveillance.
         </div>
     </footer>
+
+    <!-- ================= FLOATING AI CRIME ANALYST CHATBOT WIDGET ================= -->
+    <div id="kcavpChatWidgetContainer" class="kcavp-chat-widget-container">
+        <!-- Floating Chat Action Button (FAB) -->
+        <button id="kcavpFloatingChatBtn" class="kcavp-floating-chat-btn" aria-label="Open Crime Intelligence Assistant" title="Open KCAVP AI Crime Chatbot">
+            <span class="kcavp-fab-icon">🤖</span>
+            <span class="kcavp-fab-text">Ask Crime AI</span>
+            <span class="kcavp-fab-badge">38 Districts</span>
+            <span class="kcavp-fab-pulse"></span>
+        </button>
+
+        <!-- Floating Chat Drawer / Window -->
+        <div id="kcavpChatDrawer" class="kcavp-chat-drawer" style="display: none;" role="dialog" aria-label="KCAVP AI Crime Assistant">
+            <div class="kcavp-chat-header">
+                <div class="kcavp-chat-header-title">
+                    <div class="kcavp-chat-avatar">⚖️</div>
+                    <div>
+                        <div class="kcavp-chat-title-text">KCAVP Crime Intelligence Bot</div>
+                        <div class="kcavp-chat-status-pill">
+                            <span class="kcavp-status-dot"></span> 38 Districts Monitored (2016–2022)
+                        </div>
+                    </div>
+                </div>
+                <div class="kcavp-chat-header-actions">
+                    <button id="kcavpChatClearBtn" class="kcavp-chat-icon-btn" title="Clear Conversation">🗑️</button>
+                    <button id="kcavpChatCloseBtn" class="kcavp-chat-icon-btn" title="Minimize Chatbot">✕</button>
+                </div>
+            </div>
+
+            <!-- Chat Transcript Stream -->
+            <div id="kcavpChatMessages" class="kcavp-chat-messages">
+                <!-- Initial welcome message from AI -->
+                <div class="kcavp-msg kcavp-msg-bot">
+                    <div class="kcavp-msg-bubble">
+                        <div class="kcavp-msg-header">🤖 KCAVP Assistant</div>
+                        <div class="kcavp-msg-body">
+                            Hello! I am your <strong>Karnataka Crime Analytics & Intelligence Assistant</strong>. I analyze authentic records covering <strong>all 38 districts</strong> across Karnataka (2016–2022).<br><br>
+                            Ask me any question:
+                            <div class="kcavp-chat-quick-tags">
+                                <button class="kcavp-quick-tag" data-q="How many crimes in 2022?">📅 2022 Crimes</button>
+                                <button class="kcavp-quick-tag" data-q="Which district has the highest crime?">🏆 Highest Crime District</button>
+                                <button class="kcavp-quick-tag" data-q="Safest district in Karnataka">🛡️ Safest District</button>
+                                <button class="kcavp-quick-tag" data-q="Which district has most murders in 2022?">⚔️ Most Murders in 2022</button>
+                                <button class="kcavp-quick-tag" data-q="Compare Bengaluru City and Mysuru City">⚖️ Compare Districts</button>
+                                <button class="kcavp-quick-tag" data-q="Compare 2016 and 2022">📊 2016 vs 2022</button>
+                                <button class="kcavp-quick-tag" data-q="Total crime in Karnataka">🏛️ Statewide Total</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="kcavp-chat-footer">
+                <div class="kcavp-chat-input-wrapper">
+                    <input type="text" id="kcavpChatInput" class="kcavp-chat-input" placeholder="Ask about any district, rankings, crimes..." aria-label="Type your crime question">
+                    <button id="kcavpChatSendBtn" class="kcavp-chat-send-btn" aria-label="Send query">➤</button>
+                </div>
+                <div class="kcavp-chat-hint">Analyzes 38 Districts • 34 IPC Offenses • 2016–2022 Verified Data</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Pre-computed Data Payloads -->
     <script>
