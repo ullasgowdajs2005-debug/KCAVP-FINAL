@@ -139,7 +139,7 @@
 
         const clampedScore = Math.max(0, Math.min(100, Math.round(score || 0)));
         const remaining = 100 - clampedScore;
-        const activeColor = tierColor || '#fbbf24';
+        const activeColor = tierColor || '#b45309';
 
         pinnedGaugeChart = new Chart(canvas, {
             type: 'doughnut',
@@ -160,9 +160,9 @@
                         // Inner reference track (Low 0-35 / Moderate 35-65 / Critical 65-100 zones)
                         data: [35, 30, 35],
                         backgroundColor: [
-                            'rgba(16, 185, 129, 0.35)',
-                            'rgba(245, 158, 11, 0.35)',
-                            'rgba(244, 63, 94, 0.35)'
+                            'rgba(5, 150, 105, 0.35)',
+                            'rgba(217, 119, 6, 0.35)',
+                            'rgba(190, 18, 60, 0.35)'
                         ],
                         borderWidth: 1,
                         borderColor: 'rgba(15, 23, 42, 0.7)',
@@ -230,11 +230,11 @@
             }
             yoyValues.push(pct);
             if (pct >= 0) {
-                bgColors.push('rgba(244, 63, 94, 0.85)');
-                borderColors.push('#f43f5e');
+                bgColors.push('rgba(255, 179, 186, 0.85)');
+                borderColors.push('#ffb3ba');
             } else {
-                bgColors.push('rgba(16, 185, 129, 0.85)');
-                borderColors.push('#10b981');
+                bgColors.push('rgba(186, 255, 201, 0.85)');
+                borderColors.push('#baffc9');
             }
         }
 
@@ -245,7 +245,7 @@
             const arrow = latest >= 0 ? '▲' : '▼';
             const status = latest < 0 ? 'decelerating (improving)' : 'surging (escalation)';
             footer.innerHTML = `
-                Latest 2021→2022 Momentum: <strong style="color: ${latest < 0 ? '#10b981' : '#f43f5e'};">${arrow} ${latest > 0 ? '+' : ''}${latest}%</strong>
+                Latest 2021→2022 Momentum: <strong style="color: ${latest < 0 ? '#059669' : '#be123c'};">${arrow} ${latest > 0 ? '+' : ''}${latest}%</strong>
                 (${formatNumber(Math.abs(latestDelta))} ${latestDelta >= 0 ? 'more' : 'fewer'} cases), indicating crime velocity is <strong>${status}</strong>.
             `;
         }
@@ -287,7 +287,7 @@
                     x: {
                         grid: { display: false },
                         ticks: {
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(),
                             font: { size: 11, weight: '600' }
                         }
                     },
@@ -301,7 +301,7 @@
                             }
                         },
                         ticks: {
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(),
                             font: { size: 10 },
                             callback: function (val) {
                                 return (val > 0 ? '+' : '') + val + '%';
@@ -320,11 +320,11 @@
         if (!bar || !legend) return;
 
         const catMeta = [
-            { key: 'property_economic', label: 'Property & Theft', color: '#3b82f6' },
-            { key: 'public_safety', label: 'Traffic & Safety', color: '#f59e0b' },
-            { key: 'women_children', label: 'Women & Child', color: '#ec4899' },
-            { key: 'violent', label: 'Violent Crimes', color: '#f43f5e' },
-            { key: 'public_order', label: 'Public Order', color: '#8b5cf6' }
+            { key: 'property_economic', label: 'Property & Theft', color: '#2563eb' },
+            { key: 'public_safety', label: 'Traffic & Safety', color: '#d97706' },
+            { key: 'women_children', label: 'Women & Child', color: '#be185d' },
+            { key: 'violent', label: 'Violent Crimes', color: '#be123c' },
+            { key: 'public_order', label: 'Public Order', color: '#1e40af' }
         ];
 
         const tot = total || 1;
@@ -338,7 +338,7 @@
             legHtml += `
                 <div class="pinned-hl-item">
                     <span class="pinned-hl-dot" style="background: ${c.color};"></span>
-                    <span>${c.label}: <strong style="color: #f8fafc;">${pct}%</strong></span>
+                    <span>${c.label}: <strong style="color: var(--text-main);">${pct}%</strong></span>
                 </div>
             `;
         });
@@ -388,7 +388,7 @@
                             const sign = netShift > 0 ? '+' : '';
                             const arrow = netShift > 0 ? '▲' : (netShift < 0 ? '▼' : '●');
                             elTrend.textContent = `${arrow} ${sign}${netShift}%`;
-                            elTrend.style.color = netShift < 0 ? '#10b981' : (netShift > 0 ? '#f43f5e' : '#cbd5e1');
+                            elTrend.style.color = netShift < 0 ? '#059669' : (netShift > 0 ? '#be123c' : getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim());
                         }
                         if (elTrendSub) {
                             elTrendSub.textContent = `2016 (${formatNumber(first.total)}) → 2022 (${formatNumber(last.total)}) Net Shift`;
@@ -415,16 +415,16 @@
                         const threatScore = Math.min(99, Math.max(12, Math.round(vScore + volScore + trScore)));
 
                         let tierName = 'Guarded Vigilance';
-                        let tierColor = '#f59e0b';
+                        let tierColor = '#d97706';
                         let advisorySub = 'Standard surveillance threshold';
 
                         if (threatScore <= 35) {
                             tierName = 'Low Threat Tier';
-                            tierColor = '#10b981';
+                            tierColor = '#059669';
                             advisorySub = 'Minimal risk index recorded';
                         } else if (threatScore > 65) {
                             tierName = 'Critical Alert Tier';
-                            tierColor = '#f43f5e';
+                            tierColor = '#be123c';
                             advisorySub = 'Elevated threat density identified';
                         }
 
@@ -492,14 +492,14 @@
                 const arrow = growth > 0 ? '▲' : (growth < 0 ? '▼' : '●');
                 elYoYBadge.textContent = `${arrow} ${sign}${growth}% vs ${data.prev_year}`;
                 if (growth < 0) {
-                    elYoYBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-                    elYoYBadge.style.color = '#10b981';
+                    elYoYBadge.style.background = 'rgba(5, 150, 105, 0.15)';
+                    elYoYBadge.style.color = '#059669';
                 } else if (growth > 0) {
-                    elYoYBadge.style.background = 'rgba(244, 63, 94, 0.15)';
-                    elYoYBadge.style.color = '#f43f5e';
+                    elYoYBadge.style.background = 'rgba(190, 18, 60, 0.15)';
+                    elYoYBadge.style.color = '#be123c';
                 } else {
                     elYoYBadge.style.background = 'rgba(148, 163, 184, 0.15)';
-                    elYoYBadge.style.color = '#94a3b8';
+                    elYoYBadge.style.color = getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim();
                 }
             } else {
                 elYoYBadge.style.display = 'none';
@@ -560,6 +560,8 @@
         const ctx = canvas.getContext('2d');
         offenses = offenses || [];
 
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2563eb';
+
         offensesBarChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -567,7 +569,7 @@
                 datasets: [{
                     label: 'Recorded Cases',
                     data: offenses.map(o => o.count),
-                    backgroundColor: offenses.map(o => o.color || '#3b82f6'),
+                    backgroundColor: primaryColor,
                     borderRadius: 4
                 }]
             },
@@ -591,14 +593,14 @@
                     x: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
                         ticks: {
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(),
                             font: { family: 'JetBrains Mono', size: 10 },
                             callback: function (val) { return val >= 1000 ? (val / 1000) + 'k' : val; }
                         }
                     },
                     y: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11, weight: 500 } }
+                        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(), font: { family: 'Inter', size: 11, weight: 500 } }
                     }
                 }
             }
@@ -611,9 +613,10 @@
             initOffensesBarChart(offenses);
             return;
         }
+        const pastelColors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e8c9ff', '#c9fffc'];
         offensesBarChart.data.labels = offenses.map(o => o.name);
         offensesBarChart.data.datasets[0].data = offenses.map(o => o.count);
-        offensesBarChart.data.datasets[0].backgroundColor = offenses.map(o => o.color || '#3b82f6');
+        offensesBarChart.data.datasets[0].backgroundColor = offenses.map((o, i) => pastelColors[i % pastelColors.length]);
         offensesBarChart.update();
     }
 
@@ -713,11 +716,11 @@
                     {
                         label: 'Total District Crimes',
                         data: series.map(s => s.total),
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.12)',
                         borderWidth: 3,
                         pointRadius: 5,
-                        pointBackgroundColor: '#06b6d4',
+                        pointBackgroundColor: '#0284c7',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
                         pointHoverRadius: 8,
@@ -727,42 +730,42 @@
                     {
                         label: 'Property & Thefts',
                         data: series.map(s => s.property_economic),
-                        borderColor: '#3b82f6',
+                        borderColor: '#2563eb',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         pointRadius: 4,
-                        pointBackgroundColor: '#3b82f6',
+                        pointBackgroundColor: '#2563eb',
                         borderDash: [4, 4],
                         tension: 0.2
                     },
                     {
                         label: 'Traffic & Accidents',
                         data: series.map(s => s.public_safety),
-                        borderColor: '#f59e0b',
+                        borderColor: '#d97706',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         pointRadius: 4,
-                        pointBackgroundColor: '#f59e0b',
+                        pointBackgroundColor: '#d97706',
                         tension: 0.2
                     },
                     {
                         label: 'Women & Child Safety',
                         data: series.map(s => s.women_children),
-                        borderColor: '#ec4899',
+                        borderColor: '#be185d',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         pointRadius: 4,
-                        pointBackgroundColor: '#ec4899',
+                        pointBackgroundColor: '#be185d',
                         tension: 0.2
                     },
                     {
                         label: 'Violent Offenses',
                         data: series.map(s => s.violent),
-                        borderColor: '#f43f5e',
+                        borderColor: '#be123c',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         pointRadius: 4,
-                        pointBackgroundColor: '#f43f5e',
+                        pointBackgroundColor: '#be123c',
                         tension: 0.2
                     }
                 ]
@@ -775,7 +778,7 @@
                         display: true,
                         position: 'top',
                         labels: {
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(),
                             font: { family: 'Inter', size: 11, weight: 500 },
                             usePointStyle: true,
                             boxWidth: 8
@@ -793,12 +796,12 @@
                 scales: {
                     x: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#cbd5e1', font: { family: 'Inter', size: 11, weight: 600 } }
+                        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim(), font: { family: 'Inter', size: 11, weight: 600 } }
                     },
                     y: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
                         ticks: {
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(),
                             font: { family: 'JetBrains Mono', size: 10 },
                             callback: function (val) { return val >= 1000 ? (val / 1000) + 'k' : val; }
                         }
@@ -847,7 +850,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
                 <div>
                     <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">2016 Baseline Recording</div>
-                    <div style="font-size: 16px; font-weight: 700; color: #f8fafc;">${formatNumber(first.total)} cases</div>
+                    <div style="font-size: 16px; font-weight: 700; color: var(--text-main);">${formatNumber(first.total)} cases</div>
                 </div>
                 <span class="trend-pill trend-neutral">Base Year</span>
             </div>
@@ -855,9 +858,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
                 <div>
                     <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">2020 Pandemic Lockdown Year</div>
-                    <div style="font-size: 16px; font-weight: 700; color: #f8fafc;">${formatNumber(s2020.total)} cases</div>
+                    <div style="font-size: 16px; font-weight: 700; color: var(--text-main);">${formatNumber(s2020.total)} cases</div>
                 </div>
-                <span class="trend-pill" style="background: ${pandemicChg < 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)'}; color: ${pandemicChg < 0 ? '#10b981' : '#f43f5e'};">
+                <span class="trend-pill" style="background: ${pandemicChg < 0 ? 'rgba(5, 150, 105, 0.15)' : 'rgba(190, 18, 60, 0.15)'}; color: ${pandemicChg < 0 ? '#059669' : '#be123c'};">
                     ${panSign}${pandemicChg}% vs 2019
                 </span>
             </div>
@@ -865,9 +868,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
                 <div>
                     <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">2022 Latest NCRB Report</div>
-                    <div style="font-size: 16px; font-weight: 700; color: #f8fafc;">${formatNumber(last.total)} cases</div>
+                    <div style="font-size: 16px; font-weight: 700; color: var(--text-main);">${formatNumber(last.total)} cases</div>
                 </div>
-                <span class="trend-pill" style="background: ${netChg < 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)'}; color: ${netChg < 0 ? '#10b981' : '#f43f5e'};">
+                <span class="trend-pill" style="background: ${netChg < 0 ? 'rgba(5, 150, 105, 0.15)' : 'rgba(190, 18, 60, 0.15)'}; color: ${netChg < 0 ? '#059669' : '#be123c'};">
                     ${netSign}${netChg}% vs 2016
                 </span>
             </div>
@@ -895,7 +898,7 @@
                 datasets: [{
                     label: 'Recorded Cases',
                     data: critical.map(c => c.count),
-                    backgroundColor: 'rgba(244, 63, 94, 0.85)',
+                    backgroundColor: 'rgba(255, 179, 186, 0.85)',
                     borderRadius: 4
                 }]
             },
@@ -913,11 +916,11 @@
                 scales: {
                     x: {
                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
+                        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(), font: { family: 'JetBrains Mono', size: 10 } }
                     },
                     y: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11, weight: 500 } }
+                        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim(), font: { family: 'Inter', size: 11, weight: 500 } }
                     }
                 }
             }
@@ -960,9 +963,9 @@
                 datasets: [{
                     label: `${summaryData.district || state.selectedDistrict} Profile`,
                     data: dataVals,
-                    backgroundColor: 'rgba(99, 102, 241, 0.25)',
-                    borderColor: '#6366f1',
-                    pointBackgroundColor: '#818cf8',
+                    backgroundColor: 'rgba(37, 99, 235, 0.25)',
+                    borderColor: '#2563eb',
+                    pointBackgroundColor: '#60a5fa',
                     pointBorderColor: '#ffffff',
                     pointRadius: 4,
                     borderWidth: 2
@@ -982,7 +985,7 @@
                     r: {
                         angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
                         grid: { color: 'rgba(255, 255, 255, 0.06)' },
-                        pointLabels: { color: '#cbd5e1', font: { family: 'Inter', size: 11, weight: 500 } },
+                        pointLabels: { color: getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim(), font: { family: 'Inter', size: 11, weight: 500 } },
                         ticks: { display: false, stepSize: 10 },
                         suggestedMin: 0,
                         suggestedMax: 40
@@ -1026,9 +1029,9 @@
                     <td class="num-cell" style="font-family: var(--font-mono); color: var(--text-muted);">${r.percentage}%</td>
                     <td>
                         <span class="tile-tier-badge" style="
-                            ${r.tier_badge === 'danger' ? 'background: rgba(244, 63, 94, 0.2); color: #f43f5e;' : ''}
-                            ${r.tier_badge === 'warning' ? 'background: rgba(245, 158, 11, 0.2); color: #f59e0b;' : ''}
-                            ${r.tier_badge === 'info' ? 'background: rgba(59, 130, 246, 0.2); color: #60a5fa;' : ''}
+                            ${r.tier_badge === 'danger' ? 'background: rgba(190, 18, 60, 0.2); color: #be123c;' : ''}
+                            ${r.tier_badge === 'warning' ? 'background: rgba(217, 119, 6, 0.2); color: #d97706;' : ''}
+                            ${r.tier_badge === 'info' ? 'background: rgba(37, 99, 235, 0.2); color: #60a5fa;' : ''}
                         ">${r.tier}</span>
                     </td>
                 </tr>
@@ -1368,7 +1371,7 @@
                 .catch(err2 => {
                     console.error('Chatbot API error:', err2);
                     const errorHtml = `
-                        <div style="color: #f43f5e; padding: 6px 0;">
+                        <div style="color: #be123c; padding: 6px 0;">
                             ⚠️ Unable to complete crime query analysis. Please try again or rephrase your question.
                         </div>
                     `;
@@ -1381,7 +1384,7 @@
 
     function renderChatbotResult(data, originalQuery, source) {
         if (!data || data.status !== 'ok') {
-            const fallback = `<div style="color: #f59e0b;">${data?.message || 'No direct match found. Please try a different query.'}</div>`;
+            const fallback = `<div style="color: #d97706;">${data?.message || 'No direct match found. Please try a different query.'}</div>`;
             if (askBox) askBox.innerHTML = fallback;
             removeChatBotLoading();
             appendChatBotMessage(fallback);
@@ -1402,7 +1405,7 @@
         // Full in-page result card HTML
         const cardHtml = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 6px;">
-                <div style="font-weight: 700; color: #f8fafc; font-size: 14px;">
+                <div style="font-weight: 700; color: var(--text-main); font-size: 14px;">
                     ${data.title || 'Karnataka Crime Analytics Intelligence'}
                 </div>
                 <button id="askBoxCloseBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 0 4px;" title="Close this result">✕</button>
@@ -1422,7 +1425,7 @@
         removeChatBotLoading();
         if (source === 'drawer' || (chatDrawer && chatDrawer.style.display !== 'none')) {
             const drawerMsgHtml = `
-                <div style="font-weight: 700; color: #f8fafc; font-size: 13px; margin-bottom: 6px;">
+                <div style="font-weight: 700; color: var(--text-main); font-size: 13px; margin-bottom: 6px;">
                     ${data.title}
                 </div>
                 ${data.answer_html}
@@ -1681,7 +1684,7 @@
             title: 'Total District IPC Crimes — Comprehensive Overview',
             badge: 'District Aggregate',
             icon: '📊',
-            color: '#6366f1',
+            color: '#2563eb',
             categoryParam: 'all',
             chart1Title: 'Crime Category Volume Distribution',
             chart1Badge: 'Category Share',
@@ -1692,7 +1695,7 @@
             title: 'Property & Financial Crimes — In-Depth Analysis',
             badge: 'Property & Economic',
             icon: '💼',
-            color: '#3b82f6',
+            color: '#2563eb',
             categoryParam: 'property_economic',
             chart1Title: 'Property & Economic Offenses Breakdown',
             chart1Badge: 'Category Share',
@@ -1703,7 +1706,7 @@
             title: 'Traffic & Public Safety Violations — In-Depth Analysis',
             badge: 'Traffic & Safety',
             icon: '🚦',
-            color: '#f59e0b',
+            color: '#d97706',
             categoryParam: 'public_safety',
             chart1Title: 'Traffic & Public Safety Offenses Breakdown',
             chart1Badge: 'Category Share',
@@ -1714,7 +1717,7 @@
             title: 'Women & Child Safety Offences — Sensitive Surveillance',
             badge: 'Women & Child Safety',
             icon: '🛡️',
-            color: '#ec4899',
+            color: '#be185d',
             categoryParam: 'women_children',
             chart1Title: 'Crimes Against Women & Children Breakdown',
             chart1Badge: 'Sensitive Offenses',
@@ -1725,7 +1728,7 @@
             title: 'Violent Offenses & Bodily Harm — Deep Threat Analysis',
             badge: 'Violent Crimes',
             icon: '⚠️',
-            color: '#f43f5e',
+            color: '#be123c',
             categoryParam: 'violent',
             chart1Title: 'Violent IPC Offenses Distribution',
             chart1Badge: 'Severe Offenses',
@@ -1736,7 +1739,7 @@
             title: 'Leading Crime Head Profile — Comparative Hotspot',
             badge: 'Top Offense',
             icon: '🔥',
-            color: '#8b5cf6',
+            color: '#1e40af',
             categoryParam: 'all',
             chart1Title: 'Top 6 Recorded IPC Heads Comparison',
             chart1Badge: 'Rank Hierarchy',
@@ -1905,7 +1908,7 @@
                 const diff = y22 - y16;
                 const pct = ((diff / y16) * 100).toFixed(1);
                 const sign = diff >= 0 ? '+' : '';
-                const color = diff <= 0 ? '#10b981' : '#f43f5e';
+                const color = diff <= 0 ? '#059669' : '#be123c';
                 if (kmNetTrajectory) {
                     kmNetTrajectory.innerHTML = `<span style="color: ${color}; font-weight: 800;">${sign}${pct}%</span>`;
                 }
@@ -1940,11 +1943,11 @@
 
         if (kpiType === 'total') {
             const catMap = [
-                { key: 'property_economic', name: 'Property & Financial', color: '#3b82f6' },
-                { key: 'public_safety', name: 'Traffic & Public Safety', color: '#f59e0b' },
-                { key: 'women_children', name: 'Women & Child Safety', color: '#ec4899' },
-                { key: 'violent', name: 'Violent Offenses', color: '#f43f5e' },
-                { key: 'public_order', name: 'Public Order', color: '#8b5cf6' },
+                { key: 'property_economic', name: 'Property & Financial', color: '#2563eb' },
+                { key: 'public_safety', name: 'Traffic & Public Safety', color: '#d97706' },
+                { key: 'women_children', name: 'Women & Child Safety', color: '#be185d' },
+                { key: 'violent', name: 'Violent Offenses', color: '#be123c' },
+                { key: 'public_order', name: 'Public Order', color: '#1e40af' },
                 { key: 'other', name: 'Other IPC Crimes', color: '#64748b' }
             ];
             catMap.forEach(c => {
@@ -1954,23 +1957,25 @@
                 bgColors.push(c.color);
             });
         } else if (kpiType === 'top_offense') {
+            const pastelColors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e8c9ff', '#c9fffc'];
             const topSlice = offenses.slice(0, 6);
             topSlice.forEach((o, i) => {
                 labels.push(o.name);
                 dataVals.push(o.count);
-                bgColors.push(i === 0 ? '#8b5cf6' : 'rgba(139, 92, 246, 0.45)');
+                bgColors.push(pastelColors[i % pastelColors.length]);
             });
         } else {
-            offenses.slice(0, 8).forEach(o => {
+            const pastelColors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e8c9ff', '#c9fffc'];
+            offenses.slice(0, 8).forEach((o, i) => {
                 labels.push(o.name);
                 dataVals.push(o.count);
-                bgColors.push(o.color || meta.color);
+                bgColors.push(pastelColors[i % pastelColors.length]);
             });
         }
 
         const isDark = state.theme === 'dark';
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const textColor = isDark ? getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() : '#64748b';
 
         kpiModalChart1 = new Chart(canvas.getContext('2d'), {
             type: 'bar',
@@ -1993,7 +1998,7 @@
                     tooltip: {
                         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                         titleColor: isDark ? '#f8fafc' : '#0f172a',
-                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        bodyColor: isDark ? getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim() : '#334155',
                         borderColor: meta.color,
                         borderWidth: 1,
                         padding: 10,
@@ -2030,7 +2035,7 @@
 
         const isDark = state.theme === 'dark';
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const textColor = isDark ? getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() : '#64748b';
 
         // Extract trajectory data points
         const trajectoryData = years.map(yr => {
@@ -2072,7 +2077,7 @@
                     tooltip: {
                         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                         titleColor: isDark ? '#f8fafc' : '#0f172a',
-                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        bodyColor: isDark ? getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim() : '#334155',
                         borderColor: meta.color,
                         borderWidth: 1,
                         padding: 10,

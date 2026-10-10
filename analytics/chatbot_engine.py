@@ -129,7 +129,7 @@ CRIME_HEAD_PATTERNS = [
 
 CATEGORY_PATTERNS = [
     (r'\b(violent\s+crime(?:s)?|violence|violent\s+offence(?:s)?)\b', 'violent'),
-    (r'\b(crime(?:s)?\s+against\s+women|women\s+(?:and|&)\s+child(?:ren)?|women\s+safety|safety\s+of\s+women|women\s+crimes?|crimes?\s+on\s+women|female\s+safety)\b', 'women_children'),
+    (r'\b(crime(?:s)?\s+against\s+women|women\s+(?:and|&)\s+child(?:ren)?|women\s+safety|safety\s+of\s+women|women\s+crimes?|crimes?\s+on\s+women|female\s+safety|threat\s+to\s+women|women)\b', 'women_children'),
     (r'\b(property\s+crime(?:s)?|economic\s+crime(?:s)?|financial\s+crime(?:s)?|property\s+(?:and|&)\s+economic)\b', 'property_economic'),
     (r'\b(public\s+safety|traffic\s+offence(?:s)?|road\s+safety)\b', 'public_safety'),
     (r'\b(public\s+order|law\s+and\s+order|communal\s+unrest)\b', 'public_order'),
@@ -250,13 +250,17 @@ class CrimeChatbotEngine:
     def _is_year_superlative(self, query):
         """Checks if asking which YEAR was highest/lowest."""
         q = query.lower()
-        patterns = [
-            r'\bwhich\s+year\b',
-            r'\bwhat\s+year\b',
-            r'\byear\s+(?:with|has|had|recorded|saw)\s+(?:the\s+)?(?:highest|most|lowest|least|peak|less|fewer|lower|min|max|more)\b',
-            r'\b(?:highest|worst|safest|lowest|peak|least|best)\s+year\b'
-        ]
-        return any(re.search(p, q) for p in patterns)
+        # Direct questions
+        if re.search(r'\b(which|what)\s+year\b', q):
+            return True
+        # Intent-based checking for generalized "year" + "superlative" questions
+        if re.search(r'\b(year|when)\b', q):
+            superlatives = ['highest', 'most', 'top', 'maximum', 'max', 'worst', 'peak', 'leading', 'largest', 'lowest', 'least', 'safest', 'minimum', 'min', 'best', 'fewer', 'fewest']
+            if any(re.search(r'\b' + s + r'\b', q) for s in superlatives):
+                # Ensure they didn't just ask about a specific year (e.g. "highest in 2021")
+                if not any(y in q for y in self.years):
+                    return True
+        return False
 
     def _is_trend_query(self, query):
         """Checks if query is asking about historical trend or trajectory."""
@@ -362,20 +366,24 @@ class CrimeChatbotEngine:
             target_yr = selected_year
             return self._handle_district_analysis(districts[0], target_yr, crime_head, category)
 
-        # 8. Specific Year Queries (Statewide, NO District mentioned):
-        # E.g. "How many crimes in 2022?", "Total crime in 2020", "Murders in 2019", "2021 statistics"
+        # 8. Specific Year Queries (Contextualized to current district unless explicitly statewide):
+        # E.g. "How many crimes in 2022?", "Murders in 2019" -> defaults to selected_district
         if years:
             target_yr = years[0]
-            if crime_head or category:
-                # E.g. "How many murders in 2022?" or "Thefts in 2020" or "Violent crimes in 2021"
-                return self._handle_year_offense_statewide(target_yr, crime_head, category, selected_district)
+            if any(w in q.lower() for w in ['karnataka', 'statewide', 'across', 'overall', 'state', 'all districts']):
+                if crime_head or category:
+                    return self._handle_year_offense_statewide(target_yr, crime_head, category, selected_district)
+                else:
+                    return self._handle_year_overview(target_yr, selected_district)
             else:
-                # E.g. "How many crimes in 2022?" or "2020 crime rate" or "Total crime in 2021"
-                return self._handle_year_overview(target_yr, selected_district)
+                return self._handle_district_year(selected_district, target_yr, crime_head, category)
 
         # 9. Historical Trend query
         if self._is_trend_query(q):
-            target_dist = selected_district if any(w in q.lower() for w in ['here', 'this district', 'current']) else None
+            if any(w in q.lower() for w in ['karnataka', 'statewide', 'across', 'overall', 'state', 'all districts']):
+                target_dist = None
+            else:
+                target_dist = selected_district
             return self._handle_trend(target_dist, crime_head, category)
 
         # 10. Specific Offense / Category across all of Karnataka (no year specified)
